@@ -1,13 +1,9 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema Integrado de Inventario y Activos Fijos - Confuserca</title>
-
-<!-- ICONOS Y LOGO DE APLICACIÓN -->
-<link rel="icon" type="image/jpeg" href="logo.jpg">
-<link rel="apple-touch-icon" href="logo.jpg">
 
 <!-- LIBRERÍAS EXTERNAS: QR, SUPABASE, DEXIE, EXCEL (SHEETJS), PDF.JS, TAILWIND -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -23,7 +19,7 @@
 .sb{width:260px;background:var(--pri);color:#fff;padding:15px;display:flex;flex-direction:column;gap:6px;overflow-y:auto;flex-shrink:0}
 .sb h2{font-size:18px;text-align:center;margin:0 0 5px 0;cursor:pointer;user-select:none}
 .logo-container{width:100%;background:#fff;padding:10px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:8px;box-shadow:0 2px 4px rgba(0,0,0,0.15)}
-.logo-container img{max-width:140px;height:auto;object-contain:contain}
+.logo-container svg{width:110px;height:auto}
 .bm{background:none;border:none;color:#fff;padding:10px 12px;text-align:left;font-size:14px;cursor:pointer;border-radius:6px;transition:.2s;display:flex;align-items:center;gap:8px}
 .bm:hover,.bm.active{background:var(--sec)}.mc{flex-grow:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column}
 .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-shrink:0}.hd h1{margin:0;font-size:22px;color:var(--pri)}
@@ -51,7 +47,7 @@ th{background:#f8fafc;color:var(--pri);position:sticky;top:0;z-index:5}.fg{displ
 
 .mc-modal{background:#fff;padding:24px;border-radius:12px;text-align:center;max-width:650px;width:92%;box-shadow:0 10px 25px rgba(0,0,0,0.2);border:1px solid #e2e8f0;max-height:90vh;overflow-y:auto;}
 .tag-header-logo{width:100%;display:flex;flex-direction:column;align-items:center;margin-bottom:12px;border-bottom:2px solid #1e3a8a;padding-bottom:8px}
-.tag-header-logo img{max-width:120px;height:auto}
+.tag-header-logo svg{width:100px;height:auto}
 .tag-info-box{background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:10px;margin-top:12px;text-align:left;font-size:12px}
 .tag-info-box div{display:flex;justify-content:space-between;margin-bottom:4px;border-bottom:1px dashed #e2e8f0;padding-bottom:3px}
 .tag-info-box div:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
@@ -108,10 +104,15 @@ th{background:#f8fafc;color:var(--pri);position:sticky;top:0;z-index:5}.fg{displ
 <div id="login-overlay" class="lo">
 <div class="lb">
 <div style="margin-bottom:10px;">
-  <img src="logo.jpg" alt="Logo Confuserca" style="width:120px;height:auto;margin:0 auto;display:block;" onerror="this.src='https://via.placeholder.com/120x60?text=CONFUSERCA'">
+  <svg viewBox="0 0 300 240" style="width:120px;height:auto;margin:0 auto;display:block;">
+    <circle cx="150" cy="100" r="75" fill="none" stroke="#003366" stroke-width="14"/>
+    <path d="M 115,40 L 115,160 M 115,100 L 210,100 M 135,45 L 135,155" fill="none" stroke="#003366" stroke-width="14" stroke-linecap="square"/>
+    <path d="M 135,45 L 135,155" fill="none" stroke="#6699cc" stroke-width="8"/>
+    <text x="150" y="205" font-family="'Segoe UI', Arial, sans-serif" font-size="28" font-weight="900" fill="#003366" text-anchor="middle" letter-spacing="1">CONFUSERCA</text>
+    <text x="215" y="225" font-family="'Segoe UI', Arial, sans-serif" font-size="14" font-weight="bold" fill="#003366" text-anchor="middle">J-413238713</text>
+  </svg>
 </div>
-<p style="font-size:13px;color:#666;margin-top:4px;font-weight:bold;">CONFUSERCA (RIF: J-413238713)</p>
-<p style="font-size:11px;color:#888;margin-top:0;">Gestión de Inventarios y Activos Fijos</p>
+<p style="font-size:13px;color:#666;margin-top:0;">Gestión de Inventarios y Activos Fijos</p>
 <form onsubmit="login(event)">
 <input type="text" id="login-user" placeholder="Usuario" required autocomplete="username">
 <input type="password" id="login-pass" placeholder="Contraseña" required autocomplete="current-password">
@@ -123,7 +124,13 @@ th{background:#f8fafc;color:var(--pri);position:sticky;top:0;z-index:5}.fg{displ
 
 <div class="sb">
 <div class="logo-container">
-  <img src="logo.jpg" alt="Logo Confuserca" style="max-width:130px;height:auto;" onerror="this.src='https://via.placeholder.com/130x60?text=CONFUSERCA'">
+  <svg viewBox="0 0 300 240">
+    <circle cx="150" cy="100" r="75" fill="none" stroke="#003366" stroke-width="14"/>
+    <path d="M 115,40 L 115,160 M 115,100 L 210,100 M 135,45 L 135,155" fill="none" stroke="#003366" stroke-width="14" stroke-linecap="square"/>
+    <path d="M 135,45 L 135,155" fill="none" stroke="#6699cc" stroke-width="8"/>
+    <text x="150" y="205" font-family="'Segoe UI', Arial, sans-serif" font-size="28" font-weight="900" fill="#003366" text-anchor="middle" letter-spacing="1">CONFUSERCA</text>
+    <text x="215" y="225" font-family="'Segoe UI', Arial, sans-serif" font-size="14" font-weight="bold" fill="#003366" text-anchor="middle">J-413238713</text>
+  </svg>
 </div>
 <h2 onclick="trucoBorrarTodo(event)">Sistema Confuserca</h2>
 <div style="text-align:center;">
@@ -508,7 +515,12 @@ th{background:#f8fafc;color:var(--pri);position:sticky;top:0;z-index:5}.fg{displ
 <div id="modal-qr" class="modal">
 <div class="mc-modal">
   <div class="tag-header-logo">
-    <img src="logo.jpg" alt="Logo Confuserca" style="max-width:110px;height:auto;" onerror="this.src='https://via.placeholder.com/110x50?text=CONFUSERCA'">
+    <svg viewBox="0 0 300 240" style="width:90px;height:auto;">
+      <circle cx="150" cy="100" r="75" fill="none" stroke="#003366" stroke-width="14"/>
+      <path d="M 115,40 L 115,160 M 115,100 L 210,100 M 135,45 L 135,155" fill="none" stroke="#003366" stroke-width="14" stroke-linecap="square"/>
+      <path d="M 135,45 L 135,155" fill="none" stroke="#6699cc" stroke-width="8"/>
+      <text x="150" y="205" font-family="'Segoe UI', Arial, sans-serif" font-size="28" font-weight="900" fill="#003366" text-anchor="middle" letter-spacing="1">CONFUSERCA</text>
+    </svg>
     <div style="font-size:11px;font-weight:bold;color:#1e3a8a;margin-top:4px;">ETIQUETA OFICIAL DE CONTROL (RIF: J-413238713)</div>
   </div>
 
@@ -768,6 +780,13 @@ async function sincronizarColaPendiente() {
   }
 }
 
+const logoSVG = `<svg viewBox="0 0 300 240" style="max-height:55px;width:auto;">
+  <circle cx="150" cy="100" r="75" fill="none" stroke="#003366" stroke-width="14"/>
+  <path d="M 115,40 L 115,160 M 115,100 L 210,100 M 135,45 L 135,155" fill="none" stroke="#003366" stroke-width="14" stroke-linecap="square"/>
+  <path d="M 135,45 L 135,155" fill="none" stroke="#6699cc" stroke-width="8"/>
+  <text x="150" y="205" font-family="'Segoe UI', Arial, sans-serif" font-size="26" font-weight="900" fill="#003366" text-anchor="middle" letter-spacing="1">CONFUSERCA</text>
+</svg>`;
+
 function renderVistaPreviaPlanilla() {
   const sel = document.getElementById('select-almacen-planilla');
   const almNombre = sel ? sel.value : (almacenes[0] ? almacenes[0].nombre : 'CAMION DONFENG');
@@ -803,7 +822,7 @@ function renderVistaPreviaPlanilla() {
     <div style="font-family:'Segoe UI', Arial, sans-serif;color:#000;">
       <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #1e3a8a;padding-bottom:8px;margin-bottom:10px;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <img src="logo.jpg" alt="Logo Confuserca" style="max-height:50px;width:auto;" onerror="this.src='https://via.placeholder.com/100x40?text=CONFUSERCA'">
+          ${logoSVG}
           <div>
             <h2 style="margin:0;font-size:16px;color:#1e3a8a;font-weight:bold;">CONFUSERCA</h2>
             <p style="margin:0;font-size:10px;color:#444;">RIF: J-413238713 | CHECKLIST CAMBIO DE GUARDIA</p>
@@ -923,7 +942,7 @@ function imprimirRegistroTraslado(origen, destino, items, fechaParam, usuarioPar
       </div>
 
       <div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;">
-        <img src="logo.jpg" alt="Logo Confuserca" style="max-height:55px;width:auto;" onerror="this.src='https://via.placeholder.com/100x40?text=CONFUSERCA'">
+        ${logoSVG}
         <div style="flex-grow:1;" class="title-block">
           <h2>REGISTRO DE TRASLADO DE MATERIALES</h2>
           <p>RIF: J-413238713 | CONTROL INTERNO DE INVENTARIO</p>
@@ -1758,7 +1777,7 @@ function imprimirRegistroSalida(origen, destinoEquipo, motivo, receptor, observa
     <head><title>Vale de Salida - CONFUSERCA</title></head>
     <body style="font-family:sans-serif;padding:20px;">
       <div style="display:flex;align-items:center;gap:15px;margin-bottom:12px;border-bottom:2px solid #1e3a8a;padding-bottom:8px;">
-        <img src="logo.jpg" alt="Logo Confuserca" style="max-height:50px;width:auto;" onerror="this.src='https://via.placeholder.com/100x40?text=CONFUSERCA'">
+        ${logoSVG}
         <div>
           <h2 style="margin:0;color:#1e3a8a;">CONFUSERCA</h2>
           <p style="margin:0;font-size:11px;color:#555;">RIF: J-413238713 | VALE DE SALIDA Y CONSUMO DE MATERIALES</p>
@@ -2398,8 +2417,8 @@ function imprimirEtiquetaQR() {
     <html>
     <head><title>Etiqueta_${cod}</title></head>
     <body style="font-family:sans-serif;text-align:center;padding:10px;">
-      <img src="logo.jpg" alt="Logo Confuserca" style="max-height:40px;width:auto;margin:0 auto;display:block;" onerror="this.src='https://via.placeholder.com/80x30?text=CONFUSERCA'">
-      <h4 style="margin:4px 0;">CONFUSERCA (RIF: J-413238713)</h4>
+      <div style="margin:0 auto;display:flex;justify-content:center;">${logoSVG}</div>
+      <h4 style="margin:4px 0;color:#003366;">CONFUSERCA (RIF: J-413238713)</h4>
       <div>${qrc}</div>
       <p style="font-size:12px;"><b>CÓDIGO:</b> ${cod}<br><b>BIEN:</b> ${prod}<br><b>ESTADO:</b> ${cant}<br><b>UBIC:</b> ${ubi}</p>
       <script>window.onload = function() { setTimeout(function() { window.print(); window.close(); }, 250); };<\/script>
