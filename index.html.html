@@ -1,0 +1,2458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Integrado de Inventario y Activos Fijos - Confuserca</title>
+
+<!-- ICONOS Y LOGO DE APLICACIÓN -->
+<link rel="icon" type="image/jpeg" href="logo.jpg">
+<link rel="apple-touch-icon" href="logo.jpg">
+
+<!-- LIBRERÍAS EXTERNAS: QR, SUPABASE, DEXIE, EXCEL (SHEETJS), PDF.JS, TAILWIND -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<style>
+:root{--bg:#f4f7f6;--pri:#1e3a8a;--sec:#3b82f6;--dan:#ef4444;--war:#f59e0b;--suc:#10b981;--act:#475569}
+*{box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;background:var(--bg);margin:0;display:flex;height:100vh;overflow:hidden}
+.sb{width:260px;background:var(--pri);color:#fff;padding:15px;display:flex;flex-direction:column;gap:6px;overflow-y:auto;flex-shrink:0}
+.sb h2{font-size:18px;text-align:center;margin:0 0 5px 0;cursor:pointer;user-select:none}
+.logo-container{width:100%;background:#fff;padding:10px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:8px;box-shadow:0 2px 4px rgba(0,0,0,0.15)}
+.logo-container img{max-width:140px;height:auto;object-contain:contain}
+.bm{background:none;border:none;color:#fff;padding:10px 12px;text-align:left;font-size:14px;cursor:pointer;border-radius:6px;transition:.2s;display:flex;align-items:center;gap:8px}
+.bm:hover,.bm.active{background:var(--sec)}.mc{flex-grow:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-shrink:0}.hd h1{margin:0;font-size:22px;color:var(--pri)}
+.vw{display:none;flex-direction:column;flex-grow:1;overflow:hidden}.vw.active{display:flex;animation:fI .2s}@keyframes fI{from{opacity:0}to{opacity:1}}
+.cg{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:15px;flex-shrink:0}
+.cd{background:#fff;padding:12px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05);border-left:4px solid var(--sec)}
+.cd.danger{border-left-color:var(--dan)}.cd.warning{border-left-color:var(--war)}.cd.success{border-left-color:var(--suc)}.cd.info{border-left-color:#06b6d4}.cd.purple{border-left-color:#8b5cf6}.cd.dark{border-left-color:var(--act)}
+.cd h3{margin:0;font-size:11px;color:#666;text-transform:uppercase}.cd p{margin:6px 0 0 0;font-size:20px;font-weight:bold;color:var(--pri)}
+.cd-dep{cursor:pointer;transition:.2s;border-left-width:6px}.cd-dep:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:15px;flex-grow:1;min-height:0}.pn{background:#fff;padding:15px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.05);display:flex;flex-direction:column;overflow:hidden}
+.tc{flex-grow:1;overflow-y:auto;margin-top:8px;border:1px solid #eee;border-radius:4px}
+table{width:100%;border-collapse:collapse}th,td{padding:8px;text-align:left;border-bottom:1px solid #eee;font-size:12px;vertical-align:middle}
+th{background:#f8fafc;color:var(--pri);position:sticky;top:0;z-index:5}.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fgrp{margin-bottom:10px;display:flex;flex-direction:column}.fgrp label{margin-bottom:4px;font-weight:bold;font-size:12px;color:#333}
+.fgrp input,.fgrp select,.fgrp textarea{padding:8px;border:1px solid #ccc;border-radius:4px;font-size:13px;font-family:inherit}
+.btn-s{background:var(--pri);color:#fff;padding:10px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-size:14px;width:100%;margin-top:5px}.btn-s:hover{background:var(--sec)}
+.btn-dan{background:var(--dan)}.btn-dan:hover{background:#dc2626}.btn-suc{background:var(--suc)}.btn-suc:hover{background:#059669}
+.badge{padding:3px 6px;border-radius:12px;font-size:10px;font-weight:bold}.b-dan{background:#fee2e2;color:var(--dan)}.b-war{background:#fef3c7;color:var(--war)}.b-ok{background:#d1fae5;color:var(--suc)}
+.tag-cat{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:bold;color:#fff;text-transform:uppercase}
+.cat-quimicos{background:#06b6d4}.cat-combustibles{background:#f97316}.cat-herramientas{background:#475569}.cat-consumibles{background:#84cc16}.cat-flota{background:#8b5cf6}.cat-general{background:#94a3b8}
+.btn-act{background:#f3f4f6;border:1px solid #d1d5db;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:3px}.btn-act:hover{background:#e5e7eb}
+.btn-del{background:#fee2e2;border-color:#fca5a5;color:var(--dan)}.btn-del:hover{background:#fecaca}
+.btn-exp{padding:8px 15px;border-radius:4px;font-weight:bold;cursor:pointer;border:none;color:#fff;font-size:13px;background:var(--pri)}.btn-exp:hover{background:var(--sec)}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:1000}
+
+.mc-modal{background:#fff;padding:24px;border-radius:12px;text-align:center;max-width:650px;width:92%;box-shadow:0 10px 25px rgba(0,0,0,0.2);border:1px solid #e2e8f0;max-height:90vh;overflow-y:auto;}
+.tag-header-logo{width:100%;display:flex;flex-direction:column;align-items:center;margin-bottom:12px;border-bottom:2px solid #1e3a8a;padding-bottom:8px}
+.tag-header-logo img{max-width:120px;height:auto}
+.tag-info-box{background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:10px;margin-top:12px;text-align:left;font-size:12px}
+.tag-info-box div{display:flex;justify-content:space-between;margin-bottom:4px;border-bottom:1px dashed #e2e8f0;padding-bottom:3px}
+.tag-info-box div:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.tag-info-label{font-weight:bold;color:#1e3a8a}
+.tag-info-val{font-weight:600;color:#334155}
+
+#qrcode{margin:12px auto;display:flex;justify-content:center;align-items:center;padding:10px;background:#fff;border-radius:8px;border:1px solid #cbd5e1;min-height:210px;min-width:210px;}
+#qrcode img, #qrcode canvas{margin:0 auto;}
+.fbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;align-items:center;background:#f8fafc;padding:8px;border-radius:4px;border:1px solid #eee}
+.fbar input[type="text"]{flex-grow:1;padding:6px;border:1px solid #ccc;border-radius:4px;min-width:150px}
+.fbar select,.fbar input[type="date"]{padding:6px;border:1px solid #ccc;border-radius:4px}
+.lo{display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--pri);z-index:2000;justify-content:center;align-items:center}
+.lb{background:#fff;padding:30px;border-radius:8px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,0.2);width:320px}
+.lb input{padding:8px;border:1px solid #ccc;border-radius:4px;width:100%;margin-bottom:10px;font-size:14px;text-align:center}
+.bsearch{position:relative;margin-bottom:10px}.bs-in{width:100%;padding:10px;border:2px solid var(--sec);border-radius:6px;font-size:14px}
+.bs-ls{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ccc;border-radius:0 0 6px 6px;max-height:180px;overflow-y:auto;z-index:100;box-shadow:0 4px 6px rgba(0,0,0,0.1)}
+.bs-ls.open{display:block}.bs-it{padding:8px;border-bottom:1px solid #eee;cursor:pointer;font-size:13px}.bs-it:hover{background:#f0f4ff}
+.cart-t{background:#f8fafc;border:1px solid #ddd;border-radius:6px;padding:8px;margin-bottom:10px}
+.cart-i{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:6px;border:1px solid #eee;margin-bottom:4px;border-radius:4px}
+.cart-i input[type="number"]{width:70px;padding:4px;text-align:center;border:1px solid #ccc;border-radius:4px}
+.perm-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#f8fafc;padding:8px;border:1px solid #eee;border-radius:4px;margin-top:5px}
+.perm-grid label{font-size:11px;font-weight:normal;display:flex;align-items:center;gap:4px;cursor:pointer}
+
+.status-online{background:#10b981;color:#fff;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:bold;display:inline-block;margin-bottom:4px;}
+.status-offline{background:#ef4444;color:#fff;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:bold;display:inline-block;margin-bottom:4px;}
+
+.nav-section-title{font-size:10px;text-transform:uppercase;color:#94a3b8;font-weight:bold;margin:10px 0 3px 6px;letter-spacing:1px}
+
+/* CAJA DE CARGA MASIVA Y PLANILLAS */
+.drop-zone{border:2px dashed #3b82f6;background:#eff6ff;padding:18px;border-radius:8px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:12px;}
+.drop-zone:hover{background:#dbeafe;}
+.drop-zone p{margin:0;font-size:13px;color:#1e3a8a;font-weight:bold;}
+
+@media print{
+  @page{size:letter portrait;margin:0.8cm}
+  html, body{background:#fff!important;display:block!important;height:auto!important;overflow:visible!important;font-size:11px!important;color:#000!important;width:100%!important;margin:0!important;padding:0!important;}
+  .sb, .hd button, .cg, #panel-criticos, .fbar, .lo, .modal, .btn-act, .btn-exp, .config-backup, #btn-config, td:last-child, th:last-child{display:none!important}
+  
+  .dg{display:block!important;width:100%!important;margin:0!important;padding:0!important;}
+  .mc{padding:0!important;margin:0!important;display:block!important;overflow:visible!important;width:100%!important}
+  .vw{display:none!important}.vw.active{display:block!important;width:100%!important}
+  .pn{box-shadow:none!important;border:none!important;padding:0!important;margin:0!important;display:block!important;overflow:visible!important;width:100%!important}
+  .tc{overflow:visible!important;border:none!important;margin:0!important;width:100%!important}
+  
+  table{width:100%!important;border-collapse:collapse!important;table-layout:fixed!important;margin-top:10px!important;}
+  th, td{padding:8px 6px!important;border:1px solid #333!important;text-align:center!important;font-size:11px!important;word-wrap:break-word!important;vertical-align:middle!important;}
+  th{background:#f1f5f9!important;-webkit-print-color-adjust:exact;font-weight:bold!important;color:#000!important;}
+}
+.print-header{display:none}
+</style>
+</head>
+<body>
+
+<div id="login-overlay" class="lo">
+<div class="lb">
+<div style="margin-bottom:10px;">
+  <img src="logo.jpg" alt="Logo Confuserca" style="width:120px;height:auto;margin:0 auto;display:block;" onerror="this.src='https://via.placeholder.com/120x60?text=CONFUSERCA'">
+</div>
+<p style="font-size:13px;color:#666;margin-top:4px;font-weight:bold;">CONFUSERCA (RIF: J-413238713)</p>
+<p style="font-size:11px;color:#888;margin-top:0;">Gestión de Inventarios y Activos Fijos</p>
+<form onsubmit="login(event)">
+<input type="text" id="login-user" placeholder="Usuario" required autocomplete="username">
+<input type="password" id="login-pass" placeholder="Contraseña" required autocomplete="current-password">
+<button type="submit" class="btn-s">Iniciar Sesión</button>
+</form>
+<p style="font-size:11px;color:#888;margin-top:12px;">Default: admin / admin</p>
+</div>
+</div>
+
+<div class="sb">
+<div class="logo-container">
+  <img src="logo.jpg" alt="Logo Confuserca" style="max-width:130px;height:auto;" onerror="this.src='https://via.placeholder.com/130x60?text=CONFUSERCA'">
+</div>
+<h2 onclick="trucoBorrarTodo(event)">Sistema Confuserca</h2>
+<div style="text-align:center;">
+  <span id="net-status-badge" class="status-online">🟢 En Línea</span>
+</div>
+<div id="user-role-display" style="font-size:11px;text-align:center;margin-bottom:8px;color:#94a3b8;">No conectado</div>
+
+<div class="nav-section-title">📦 INVENTARIO OPERATIVO</div>
+<button class="bm active" id="nav-dash" onclick="showView('dashboard',this)">📊 Dashboard Stock</button>
+<div id="dynamic-warehouses"></div>
+<button class="bm" id="nav-ingresar" onclick="showView('inventario',this)">📦 Ingresar Stock</button>
+<button class="bm" id="nav-traslados" onclick="showView('traslados',this)">🔄 Traslados Stock</button>
+<button class="bm" id="nav-salidas" onclick="showView('salidas',this)">📤 Registrar Salidas</button>
+<button class="bm" id="nav-planilla" onclick="showView('planilla-guardia',this)">📋 Planilla Imprimible Guardia</button>
+
+<div class="nav-section-title">🏢 ACTIVOS Y INFRAESTRUCTURA</div>
+<button class="bm" id="nav-activos" onclick="showView('activos-fijos',this)">🖥️ Control de Activos Fijos</button>
+<button class="bm" id="nav-historial" onclick="showView('historial',this)">📜 Kardex e Historial</button>
+
+<button class="bm" id="btn-config" onclick="showView('config',this)" style="display:none;margin-top:10px;">⚙️ Configuración</button>
+<button class="bm" onclick="logout()" style="margin-top:auto;background:#b91c1c;">🚪 Cerrar Sesión</button>
+</div>
+
+<div class="mc">
+
+<!-- DASHBOARD INVENTARIO -->
+<div id="dashboard" class="vw active">
+<div class="hd">
+  <h1>Panel de Control Inventario</h1>
+  <div style="display:flex;gap:8px;">
+    <button class="btn-exp" style="background:#8b5cf6;" onclick="abrirModalCargaMasiva()">⚡ Carga Masiva (Excel/PDF/Foto)</button>
+    <button class="btn-exp" style="background:#475569;" onclick="recategorizarTodoMasivo()">🛠️ Re-categorizar Herramientas</button>
+    <button class="btn-exp" id="btn-print-dash" onclick="imprimirReporte()">📄 Imprimir PDF</button>
+  </div>
+</div>
+<div class="cg" id="resumen-categorias"></div>
+<div class="cg">
+<div class="cd"><h3>Total Productos</h3><p id="total-productos">0</p></div>
+<div class="cd success" id="card-valor-inventario"><h3>Valor Inventario</h3><p id="valor-inventario">$0.00</p></div>
+<div class="cd danger"><h3>Comprar Urgente</h3><p id="total-urgente">0</p></div>
+<div class="cd warning"><h3>Sugerencia Compra</h3><p id="total-sugerencia">0</p></div>
+</div>
+<div class="dg">
+<div class="pn">
+<h3>⚠️ Alertas e Inventario General</h3>
+<div class="tc"><table><thead><tr><th>Código</th><th>Categoría</th><th>Producto</th><th class="col-costo">Costo Unit ($)</th><th>Stock Total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tabla-alertas"></tbody></table></div>
+</div>
+<div class="pn" id="panel-criticos">
+<h3>🚨 Top 5 Críticos</h3>
+<div class="tc"><table><thead><tr><th>Código</th><th>Producto</th><th>Falta</th><th>Acción</th></tr></thead><tbody id="tabla-criticos"></tbody></table></div>
+</div>
+</div>
+</div>
+
+<!-- MÓDULO PLANILLA IMPRIMIBLE CAMBIO DE GUARDIA -->
+<div id="planilla-guardia" class="vw">
+<div class="hd">
+  <h1>📋 Generador de Formato Imprimible - Cambio de Guardia</h1>
+  <button class="btn-exp" style="background:#059669;" onclick="imprimirPlanillaFisica()">🖨️ Imprimir Formato Físico (PDF)</button>
+</div>
+
+<div class="pn">
+  <div class="fbar">
+    <label style="font-weight:bold;color:var(--pri);">Seleccionar Camión / Depósito para la Guardia:</label>
+    <select id="select-almacen-planilla" onchange="renderVistaPreviaPlanilla()"></select>
+  </div>
+  <p style="font-size:12px;color:#666;margin-top:0;">* Esta vista previa genera el **Formato Exacto de Checklist Confuserca** precargando el stock teórico para que la cuadrilla realice el conteo y firma a mano.</p>
+  
+  <div id="contenedor-planilla-previa" style="background:#fff;border:1px solid #ccc;padding:25px;border-radius:8px;max-width:900px;margin:10px auto;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+  </div>
+</div>
+</div>
+
+<!-- MÓDULO DE ACTIVOS FIJOS -->
+<div id="activos-fijos" class="vw">
+<div class="hd">
+  <h1>🏢 Control de Activos Fijos e Infraestructura</h1>
+  <div style="display:flex;gap:8px;">
+    <button class="btn-exp" style="background:#059669;" onclick="crearTrailerRapido()">➕ Crear Trailer / Oficina</button>
+    <button class="btn-exp" onclick="imprimirReporte()">📄 Imprimir Informe de Activos</button>
+  </div>
+</div>
+
+<div class="cg">
+  <div class="cd dark"><h3>Total Activos Fijos</h3><p id="act-totales">0</p></div>
+  <div class="cd info"><h3>Trailers / Oficinas</h3><p id="act-ubicaciones">0</p></div>
+  <div class="cd success"><h3>Equipos Operativos</h3><p id="act-operativos">0</p></div>
+  <div class="cd purple"><h3>Inversión Total ($)</h3><p id="act-valor-total">$0.00</p></div>
+</div>
+
+<div class="dg">
+<div class="pn">
+  <h3>➕ Registrar / Mover Activo Fijo</h3>
+  <form id="form-activo" onsubmit="guardarActivoFijo(event)">
+    <div class="fgrp"><label>Nombre del Activo / Bien:</label><input type="text" id="act-nombre" required placeholder="Ej: Escritorio Ejecutivo, Impresora HP Laser, Televisor 43..."></div>
+    <div class="fg">
+      <div class="fgrp"><label>Categoría del Bien:</label>
+        <select id="act-categoria" required>
+          <option value="Mobiliario">🪑 Mobiliario (Sillas, Mesas, Camas)</option>
+          <option value="Electrónica / Computación">💻 Electrónica (DVR, TV, Computadoras, Impresoras)</option>
+          <option value="Electrodomésticos">⚡ Electrodomésticos (Neveras, A/A, Microondas)</option>
+          <option value="Estructuras y Trailers">🏠 Trailers / Contenedores / Oficinas</option>
+          <option value="Maquinaria Fija">⚙️ Maquinaria Fija / Planta</option>
+        </select>
+      </div>
+      <div class="fgrp"><label>Ubicación Actual (Trailer / Oficina):</label><select id="act-ubicacion" required></select></div>
+    </div>
+    <div class="fg">
+      <div class="fgrp"><label>Valor / Costo Estimado ($) - Opcional:</label><input type="number" id="act-costo" min="0" step="any" placeholder="0.00 (Si no lo sabes déjalo en 0)"></div>
+      <div class="fgrp"><label>Nº de Serie / Chasis (Opcional):</label><input type="text" id="act-serie" placeholder="Ej: S/N: 98321049"></div>
+    </div>
+    <div class="fg">
+      <div class="fgrp"><label>Estado Físico del Bien:</label>
+        <select id="act-estado" required>
+          <option value="Excelente">🟢 Excelente Estado</option>
+          <option value="Operativo">🔵 Operativo / Con uso</option>
+          <option value="En Reparacion">🟡 En Reparación / Mantenimiento</option>
+          <option value="Dañado">🔴 Dañado / Desincorporar</option>
+        </select>
+      </div>
+      <div class="fgrp"><label>Responsable / Asignado A:</label><input type="text" id="act-responsable" placeholder="Ej: Lic. María (Adm) / Guardia Taller"></div>
+    </div>
+    <button type="submit" class="btn-s" style="background:var(--act);">💾 Registrar Activo Fijo</button>
+  </form>
+</div>
+
+<div class="pn">
+  <h3>🔍 Inventario General de Activos Fijos</h3>
+  <div class="fbar">
+    <input type="text" id="filtro-activo" placeholder="🔍 Buscar por nombre, trailer, código..." onkeyup="renderTablaActivos()">
+    <select id="filtro-ubicacion-act" onchange="renderTablaActivos()"><option value="TODOS">Todas las Ubicaciones</option></select>
+  </div>
+  <div class="tc">
+    <table>
+      <thead>
+        <tr>
+          <th>Placa/Código</th>
+          <th>Bien / Activo</th>
+          <th>Categoría</th>
+          <th>Ubicación / Trailer</th>
+          <th>Valor ($)</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-activos"></tbody>
+    </table>
+  </div>
+</div>
+</div>
+</div>
+
+<div id="vista-categoria" class="vw">
+<div class="hd"><h1 id="cat-titulo">📍 Depósito</h1><button class="btn-exp" id="btn-print-cat" onclick="imprimirReporte()">📄 Imprimir PDF</button></div>
+<div class="cg">
+<div class="cd"><h3>Productos</h3><p id="cat-total-prod">0</p></div>
+<div class="cd success"><h3>Stock Físico</h3><p id="cat-total-stock">0</p></div>
+<div class="cd info" id="card-cat-total-valor"><h3>Valor Depósito</h3><p id="cat-total-valor">$0.00</p></div>
+</div>
+<div class="pn">
+<div class="fbar">
+  <input type="text" id="filtro-deposito-input" placeholder="🔍 Buscar material o código en este depósito..." onkeyup="filtrarTablaDeposito()">
+</div>
+<div class="tc"><table><thead><tr><th>Código</th><th>Producto</th><th>Medida</th><th class="col-costo">Costo Unit ($)</th><th>Stock Total</th><th>Desglose Almacenes</th><th>Acciones</th></tr></thead><tbody id="tabla-categoria-detalle"></tbody></table></div>
+</div>
+</div>
+
+<div id="dynamic-warehouse-views"></div>
+
+<div id="inventario" class="vw">
+<div class="hd"><h1>📦 Ingresar Producto o Sumar Stock</h1></div>
+<div class="pn" style="max-width:700px;">
+<form id="form-producto" onsubmit="guardarProducto(event)">
+<div class="fgrp"><label>Nombre del Producto:</label><input type="text" id="prod-nombre" required placeholder="Ej: Kit de Dados y Rache, Troquel, Cloro..." onkeyup="autoselectCategoriaForm()"></div>
+<div class="fg">
+<div class="fgrp">
+  <label>Categoría del Producto:</label>
+  <select id="prod-categoria" required>
+    <option value="AUTO">🤖 Detección Automática</option>
+    <option value="Herramientas">🔧 Herramientas y Equipos</option>
+    <option value="Lubricantes y Flota">🛢️ Lubricantes y Flota</option>
+    <option value="Combustibles">⛽ Combustibles</option>
+    <option value="Químicos y Limpieza">🧪 Químicos y Limpieza</option>
+    <option value="Consumibles Generales">📦 Consumibles Generales</option>
+  </select>
+</div>
+<div class="fgrp"><label>Unidad de Medida:</label>
+<select id="prod-medida" required>
+<option value="Unidad">Unidad</option><option value="Juego/Kit">Juego / Kit</option><option value="Metros">Metros (m)</option><option value="Bulto">Bulto</option><option value="Caja">Caja</option><option value="Docena">Docena</option><option value="Paquete">Paquete</option><option value="Saco">Saco</option><option value="Rollo">Rollo</option><option value="Paila">Paila</option><option value="Tambor">Tambor</option><option value="Galón">Galón</option><option value="Litro">Litro</option><option value="Kilo">Kilo</option>
+</select>
+</div>
+</div>
+<div class="fgrp"><label>Almacén / Vehículo Destino:</label><select id="prod-almacen" required></select></div>
+<div class="fg">
+<div class="fgrp"><label>Stock Mínimo (Roja):</label><input type="number" id="prod-minimo" required min="0" step="any" value="5"></div>
+<div class="fgrp"><label>Punto Reorden (Amarilla):</label><input type="number" id="prod-reorden" required min="0" step="any" value="10"></div>
+</div>
+<div class="fg">
+<div class="fgrp"><label>Cantidad a Ingresar:</label><input type="number" id="prod-cantidad" required min="0.01" step="any" value="1"></div>
+<div class="fgrp"><label>Costo Total Compra ($) - Opcional:</label><input type="number" id="prod-costo" min="0" step="any" placeholder="0.00 (dejar vacío si no se sabe)"></div>
+</div>
+<div class="fg">
+<div class="fgrp"><label>Lote (Opcional):</label><input type="text" id="prod-lote"></div>
+<div class="fgrp"><label>Vencimiento (Opcional):</label><input type="date" id="prod-vencimiento"></div>
+</div>
+<button type="submit" class="btn-s">Procesar Ingreso</button>
+</form>
+</div>
+</div>
+
+<div id="traslados" class="vw">
+<div class="hd"><h1>🔄 Traslado Múltiple de Productos</h1></div>
+<div class="dg">
+<div class="pn">
+<form id="form-traslado" onsubmit="guardarTraslado(event)">
+<div class="fgrp bsearch">
+<label>1. Buscar y Seleccionar Producto:</label>
+<input type="text" id="input-buscador-prod" class="bs-in" placeholder="Escribe código o nombre..." autocomplete="off" onkeyup="filtrarBuscador()" onfocus="mostrarListaBuscador()">
+<div id="lista-buscador-prod" class="bs-ls"></div>
+</div>
+<div class="fgrp">
+<label>2. Lista de Productos a Mover:</label>
+<div id="carrito-traslado" class="cart-t"><p style="text-align:center;color:#888;margin:0;">Sin productos seleccionados.</p></div>
+</div>
+<div class="fg">
+<div class="fgrp"><label>3. Origen:</label><select id="tras-origen" required></select></div>
+<div class="fgrp"><label>4. Destino:</label><select id="tras-destino" required></select></div>
+</div>
+<button type="submit" class="btn-s btn-suc">📦 Ejecutar e Imprimir Traslado</button>
+</form>
+</div>
+
+<div class="pn">
+<h3>📜 Historial de Traslados Realizados (Reimpresión)</h3>
+<div class="tc">
+<table><thead><tr><th>Fecha</th><th>Origen ➔ Destino</th><th>Productos</th><th>Imprimir</th></tr></thead><tbody id="tabla-historial-traslados"></tbody></table>
+</div>
+</div>
+</div>
+</div>
+
+<div id="salidas" class="vw">
+<div class="hd"><h1>📤 Registro de Salida y Consumo de Materiales</h1></div>
+<div class="dg">
+<div class="pn">
+<form id="form-salida" onsubmit="guardarSalida(event)">
+<div class="fg">
+<div class="fgrp"><label>1. Origen (Almacén del cual sale):</label><select id="sal-origen" required></select></div>
+<div class="fgrp">
+<label>2. Destino / Asignación:</label>
+<select id="sal-destino-equipo" required></select>
+</div>
+</div>
+
+<div class="fgrp bsearch">
+<label>3. Buscar y Seleccionar Producto:</label>
+<input type="text" id="input-buscador-salida" class="bs-in" placeholder="Escribe código o nombre del producto..." autocomplete="off" onkeyup="filtrarBuscadorSalida()" onfocus="mostrarListaBuscadorSalida()">
+<div id="lista-buscador-salida" class="bs-ls"></div>
+</div>
+
+<div class="fgrp">
+<label>4. Materiales / Consumibles a Despachar:</label>
+<div id="carrito-salida" class="cart-t"><p style="text-align:center;color:#888;margin:0;">Sin productos seleccionados para salida.</p></div>
+</div>
+
+<div class="fg">
+<div class="fgrp">
+<label>5. Categoría de Motivo:</label>
+<select id="sal-motivo" required>
+<option value="Consumo Interno / Mantenimiento">Consumo Interno / Mantenimiento</option>
+<option value="Venta / Despacho">Venta / Despacho</option>
+<option value="Avería / Daño">Avería / Daño</option>
+<option value="Devolución">Devolución</option>
+<option value="Vencimiento">Vencimiento</option>
+</select>
+</div>
+<div class="fgrp">
+<label>6. Responsable / Receptor:</label>
+<input type="text" id="sal-receptor" placeholder="Nombre de quien recibe/solicita (Opcional)">
+</div>
+</div>
+
+<div class="fgrp">
+<label>7. Observaciones y Detalles de Salida:</label>
+<textarea id="sal-observaciones" rows="2" placeholder="Ej: Cambio de aceite preventivo a los 5,000 Km..."></textarea>
+</div>
+
+<button type="submit" class="btn-s btn-dan">📤 Procesar e Imprimir Vale de Salida</button>
+</form>
+</div>
+
+<div class="pn">
+<h3>📜 Historial de Salidas / Consumos (Reimpresión)</h3>
+<div class="tc">
+<table><thead><tr><th>Fecha</th><th>Origen ➔ Destino</th><th>Productos</th><th>Imprimir</th></tr></thead><tbody id="tabla-historial-salidas"></tbody></table>
+</div>
+</div>
+</div>
+</div>
+
+<div id="historial" class="vw">
+<div class="hd"><h1>📜 Historial y Kardex General</h1><button class="btn-exp" id="btn-print-hist" onclick="imprimirReporte()">📄 Imprimir PDF</button></div>
+<div class="pn">
+<div class="fbar">
+<input type="text" id="filtro-busqueda" placeholder="🔍 Buscar..." onkeyup="actualizarHistorial()">
+<select id="filtro-tipo" onchange="actualizarHistorial()">
+<option value="TODOS">Todos los tipos</option><option value="INGRESO">Ingresos</option><option value="CREACIÓN">Creaciones</option><option value="SALIDA">Salidas</option><option value="TRASLADO">Traslados</option><option value="ACTIVO_FIJO">Activos Fijos</option>
+</select>
+<span>Desde:</span><input type="date" id="filtro-desde" onchange="actualizarHistorial()">
+<span>Hasta:</span><input type="date" id="filtro-hasta" onchange="actualizarHistorial()">
+<button class="btn-act" onclick="setMesActual()">Mes Actual</button>
+<button class="btn-act" onclick="limpiarFechas()">Limpiar</button>
+</div>
+<div class="tc"><table><thead><tr><th>Fecha / Hora</th><th>Tipo</th><th>Código</th><th>Producto / Activo</th><th>Cantidad</th><th>Detalle / Usuario</th></tr></thead><tbody id="tabla-historial"></tbody></table></div>
+</div>
+</div>
+
+<div id="config" class="vw">
+<div class="hd"><h1>⚙️ Configuración del Sistema</h1></div>
+<div class="dg">
+<div class="pn">
+<h3>👥 Gestión de Usuarios y Permisos</h3>
+<div class="tc" style="max-height:180px;">
+<table><thead><tr><th>Usuario</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tabla-usuarios-config"></tbody></table>
+</div>
+<form id="form-user" onsubmit="guardarUsuario(event)" style="margin-top:10px;border-top:1px solid #eee;padding-top:10px;">
+<input type="hidden" id="u-edit-index" value="-1">
+<div class="fg">
+<div class="fgrp"><label>Nombre Usuario:</label><input type="text" id="u-nombre" required placeholder="ej: Juan"></div>
+<div class="fgrp"><label>Contraseña:</label><input type="password" id="u-pass" required placeholder="Clave"></div>
+</div>
+<label style="font-weight:bold;font-size:12px;">Permisos Asignados:</label>
+<div class="perm-grid">
+<label><input type="checkbox" id="p-dash" checked> Ver Dashboard</label>
+<label><input type="checkbox" id="p-val" checked> Ver Valor Inventario</label>
+<label><input type="checkbox" id="p-hist" checked> Ver Historial</label>
+<label><input type="checkbox" id="p-ing" checked> Registrar Ingresos</label>
+<label><input type="checkbox" id="p-sal" checked> Registrar Salidas</label>
+<label><input type="checkbox" id="p-tras" checked> Registrar Traslados</label>
+<label><input type="checkbox" id="p-del" checked> Eliminar Productos</label>
+<label><input type="checkbox" id="p-alm" checked> Gestionar Almacenes/Estructuras</label>
+<label><input type="checkbox" id="p-usr" checked> Gestionar Usuarios</label>
+<label><input type="checkbox" id="p-exp" checked> Exportar / Imprimir</label>
+</div>
+<div style="display:flex;gap:5px;margin-top:8px;">
+<button type="submit" class="btn-s" style="margin-top:0;">Guardar Usuario</button>
+<button type="button" class="btn-act" onclick="resetFormUsuario()">Cancelar</button>
+</div>
+</form>
+</div>
+
+<div class="pn">
+<h3>🏢 Ubicaciones (Almacenes, Trailers y Oficinas)</h3>
+<div class="tc" style="max-height:180px;">
+<table><thead><tr><th>Nombre</th><th>Tipo</th><th>Placa / Detalle</th><th>Acción</th></tr></thead><tbody id="tabla-almacenes-config"></tbody></table>
+</div>
+<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+<input type="hidden" id="alm-edit-index" value="-1">
+<div class="fg">
+<div class="fgrp"><label>Nombre Ubicación / Trailer:</label><input type="text" id="nuevo-alm-nombre" placeholder="ej. Trailer Oficina Adm, Trailer Dormitorio 01"></div>
+<div class="fgrp"><label>Tipo de Clasificación:</label>
+<select id="nuevo-alm-tipo" onchange="cambiarLabelTipoAlm()">
+<option value="Deposito">Depósito / Almacén Stock</option>
+<option value="Vehiculo">Vehículo / Camión</option>
+<option value="Trailer/Oficina">🏠 Trailer / Oficina / Estructura Fija</option>
+</select>
+</div>
+</div>
+<div class="fgrp"><label id="lbl-alm-detalle">Descripción / Detalle:</label><input type="text" id="nuevo-alm-detalle" placeholder="ej. Base Maracaibo / Campo"></div>
+<div style="display:flex;gap:5px;">
+<button class="btn-s" id="btn-alm-guardar" style="margin-top:0;" onclick="agregarAlmacen()">Agregar Ubicación</button>
+<button class="btn-act" id="btn-alm-cancelar" style="display:none;" onclick="resetFormAlmacen()">Cancelar</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<!-- MODAL ETIQUETA QR -->
+<div id="modal-qr" class="modal">
+<div class="mc-modal">
+  <div class="tag-header-logo">
+    <img src="logo.jpg" alt="Logo Confuserca" style="max-width:110px;height:auto;" onerror="this.src='https://via.placeholder.com/110x50?text=CONFUSERCA'">
+    <div style="font-size:11px;font-weight:bold;color:#1e3a8a;margin-top:4px;">ETIQUETA OFICIAL DE CONTROL (RIF: J-413238713)</div>
+  </div>
+
+  <div id="qrcode"></div>
+
+  <div class="tag-info-box">
+    <div><span class="tag-info-label">CÓDIGO:</span><span class="tag-info-val" id="tag-val-codigo">CF0000</span></div>
+    <div><span class="tag-info-label">PRODUCTO / BIEN:</span><span class="tag-info-val" id="tag-val-producto">Nombre</span></div>
+    <div><span class="tag-info-label">CANTIDAD / ESTADO:</span><span class="tag-info-val" id="tag-val-cantidad">0 Unid</span></div>
+    <div><span class="tag-info-label">UBICACIÓN / TRAILER:</span><span class="tag-info-val" id="tag-val-ubicacion">General</span></div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <button class="btn-s btn-suc" onclick="imprimirEtiquetaQR()">🖨️ Imprimir Etiqueta</button>
+    <button class="btn-s btn-dan" onclick="cerrarModal()">Cerrar</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL DE CARGA MASIVA INTELIGENTE MEJORADO -->
+<div id="modal-carga-masiva" class="modal">
+<div class="mc-modal">
+  <h2 style="color:var(--pri);margin-top:0;">⚡ Carga Masiva Inteligente</h2>
+  <p style="font-size:12px;color:#666;">Carga múltiples ítems desde Excel (.xlsx, .csv) o PDF. El sistema mapea automáticamente los encabezados.</p>
+
+  <div class="drop-zone" onclick="document.getElementById('file-input-masivo').click()">
+    <p>📁 Haz clic aquí para elegir tu archivo de Excel o PDF</p>
+    <span style="font-size:11px;color:#666;">(Formatos: .xlsx, .xls, .csv, .pdf)</span>
+    <input type="file" id="file-input-masivo" accept=".xlsx, .xls, .csv, .pdf" style="display:none;" onchange="procesarArchivoMasivo(event)">
+  </div>
+
+  <div class="fg" style="text-align:left;">
+    <div class="fgrp">
+      <label>1. TIPO DE INGRESO:</label>
+      <select id="masivo-tipo-destino" onchange="actualizarSelectDestinoMasivo()">
+        <option value="STOCK">📦 Stock Consumible / Materiales</option>
+        <option value="ACTIVOS">🏢 Activos Fijos / Equipos / Bienes</option>
+      </select>
+    </div>
+    <div class="fgrp">
+      <label>2. UBICACIÓN DESTINO:</label>
+      <select id="masivo-ubicacion-destino"></select>
+    </div>
+  </div>
+
+  <div style="text-align:left;margin-top:10px;">
+    <label style="font-weight:bold;font-size:12px;">3. Ítems Detectados (<span id="masivo-count">0</span>):</label>
+    <div class="tc" style="max-height:220px;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Descripción / Ítem</th>
+            <th>Cant</th>
+            <th>Medida / Est</th>
+            <th>Costo Unit ($)</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-vista-previa-masiva">
+          <tr><td colspan="5" style="text-align:center;color:#888;">Sin datos cargados. Adjunte su archivo.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-top:16px;">
+    <button class="btn-s btn-suc" id="btn-confirmar-masivo" style="display:none;" onclick="confirmarEInsertarMasivo()">✅ Confirmar e Ingresar Todo</button>
+    <button class="btn-s btn-dan" onclick="cerrarModalCargaMasiva()">Cancelar</button>
+  </div>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://dekponnfhmpazuafitij.supabase.co";
+const SUPABASE_KEY = "sb_publishable_io9pQbl8WBq3nCq1MQ6qpw_sll_-Mij";
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const localDB = new Dexie("ConfusercaInventarioDB");
+localDB.version(2).stores({
+  inventario: 'codigo, nombre, categoria',
+  activos: 'codigo, nombre, ubicacion, estado',
+  historial: '++idLocal, fecha, tipo, codigo',
+  almacenes: 'nombre, tipo',
+  usuarios: 'user',
+  registrosTraslados: 'id',
+  registrosSalidas: 'id',
+  syncQueue: '++id, tabla, accion, payload'
+});
+
+let currentUser = null;
+let clicsTitulo = 0;
+let carritoTraslado = [];
+let carritoSalida = [];
+let categoriaActualGlobal = '';
+let itemsMasivosTemporal = [];
+
+const defPerms = { dash:true, val:true, hist:true, ing:true, sal:true, tras:true, del:true, alm:true, usr:true, exp:true };
+
+let inventario = [];
+let activosFijos = [];
+let historial = [];
+let almacenes = [];
+let usuarios = [];
+let registrosTraslados = [];
+let registrosSalidas = [];
+
+function depurarDuplicadosInventario() {
+  const mapa = new Map();
+  inventario.forEach(item => {
+    if (item.codigo) {
+      if (!mapa.has(item.codigo)) {
+        mapa.set(item.codigo, item);
+      } else {
+        const existente = mapa.get(item.codigo);
+        almacenes.forEach(a => {
+          const k = `stock_${a.nombre.toLowerCase()}`;
+          if (item[k]) existente[k] = Math.max(existente[k] || 0, item[k]);
+        });
+      }
+    }
+  });
+  inventario = Array.from(mapa.values());
+}
+
+function actualizarEstadoRed() {
+  const badge = document.getElementById('net-status-badge');
+  if (navigator.onLine) {
+    badge.className = 'status-online';
+    badge.innerText = '🟢 En Línea';
+    sincronizarColaPendiente();
+  } else {
+    badge.className = 'status-offline';
+    badge.innerText = '🔴 Modo Offline';
+  }
+}
+
+window.addEventListener('online', actualizarEstadoRed);
+window.addEventListener('offline', actualizarEstadoRed);
+
+async function cargarDatosDesdeNube() {
+  actualizarEstadoRed();
+  
+  if (navigator.onLine) {
+    try {
+      const { data: dataInv } = await _supabase.from('inventario').select('*');
+      if (dataInv && dataInv.length > 0) {
+        inventario = dataInv.map(p => ({ ...p, ...(p.stocks || {}) }));
+        depurarDuplicadosInventario();
+        await localDB.inventario.clear();
+        await localDB.inventario.bulkPut(inventario);
+      }
+
+      const { data: dataAct } = await _supabase.from('activos').select('*');
+      if (dataAct && dataAct.length > 0) {
+        activosFijos = dataAct;
+        await localDB.activos.clear();
+        await localDB.activos.bulkPut(activosFijos);
+      }
+
+      const { data: dataHist } = await _supabase.from('historial').select('*').order('id', { ascending: false });
+      if (dataHist) {
+        historial = dataHist;
+        await localDB.historial.clear();
+        await localDB.historial.bulkPut(historial);
+      }
+
+      const { data: dataAlm } = await _supabase.from('almacenes').select('*');
+      if (dataAlm && dataAlm.length > 0) {
+        almacenes = dataAlm;
+        await localDB.almacenes.clear();
+        await localDB.almacenes.bulkPut(almacenes);
+      }
+
+      const { data: dataUsr } = await _supabase.from('usuarios').select('*');
+      if (dataUsr && dataUsr.length > 0) {
+        usuarios = dataUsr.map(u => ({ user: u.username, pass: u.pass, activo: u.activo, perms: u.perms }));
+        await localDB.usuarios.clear();
+        await localDB.usuarios.bulkPut(usuarios);
+      }
+    } catch (err) {
+      console.warn("⚠️ Usando copia local por fallo de conexión:", err);
+      await cargarDesdeIndexedDBLocal();
+    }
+  } else {
+    await cargarDesdeIndexedDBLocal();
+  }
+
+  registrosTraslados = await localDB.registrosTraslados.toArray();
+  registrosSalidas = await localDB.registrosSalidas.toArray();
+}
+
+async function cargarDesdeIndexedDBLocal() {
+  inventario = await localDB.inventario.toArray();
+  activosFijos = await localDB.activos.toArray();
+  depurarDuplicadosInventario();
+  historial = await localDB.historial.reverse().toArray();
+  almacenes = await localDB.almacenes.toArray();
+  usuarios = await localDB.usuarios.toArray();
+
+  if (!almacenes || almacenes.length === 0) {
+    almacenes = [
+      { nombre: 'Maracaibo', tipo: 'Deposito', detalle: 'Principal' },
+      { nombre: 'Campo', tipo: 'Deposito', detalle: 'Secundario' },
+      { nombre: 'CAMION DONFENG', tipo: 'Vehiculo', detalle: 'Cuadrilla Campo' },
+      { nombre: 'Trailer Oficina Km 40', tipo: 'Trailer/Oficina', detalle: 'Base Operaciones Km 40' }
+    ];
+  }
+  if (!usuarios || usuarios.length === 0) {
+    usuarios = [{ user: 'admin', pass: 'admin', activo: true, perms: { ...defPerms } }];
+  }
+}
+
+async function guardarEnMemoria() {
+  depurarDuplicadosInventario();
+  await localDB.inventario.clear();
+  await localDB.inventario.bulkPut(inventario);
+  await localDB.activos.clear();
+  await localDB.activos.bulkPut(activosFijos);
+  await localDB.almacenes.clear();
+  await localDB.almacenes.bulkPut(almacenes);
+  await localDB.usuarios.clear();
+  await localDB.usuarios.bulkPut(usuarios);
+  await localDB.registrosTraslados.clear();
+  await localDB.registrosTraslados.bulkPut(registrosTraslados);
+  await localDB.registrosSalidas.clear();
+  await localDB.registrosSalidas.bulkPut(registrosSalidas);
+}
+
+async function agregarAColaSync(tabla, accion, payload) {
+  await localDB.syncQueue.add({ tabla, accion, payload });
+  if (navigator.onLine) {
+    sincronizarColaPendiente();
+  }
+}
+
+async function sincronizarColaPendiente() {
+  if (!navigator.onLine) return;
+  const cola = await localDB.syncQueue.toArray();
+  if (!cola.length) return;
+
+  for (const item of cola) {
+    try {
+      if (item.accion === 'INSERT') {
+        await _supabase.from(item.tabla).insert([item.payload]);
+      } else if (item.accion === 'UPDATE') {
+        const key = item.tabla === 'usuarios' ? 'username' : (item.tabla === 'almacenes' ? 'nombre' : 'codigo');
+        const val = item.payload[key];
+        await _supabase.from(item.tabla).update(item.payload).eq(key, val);
+      } else if (item.accion === 'DELETE') {
+        const key = item.tabla === 'usuarios' ? 'username' : (item.tabla === 'almacenes' ? 'nombre' : 'codigo');
+        await _supabase.from(item.tabla).delete().eq(key, item.payload[key]);
+      }
+      await localDB.syncQueue.delete(item.id);
+    } catch (err) {
+      console.error("Error al sincronizar elemento:", err);
+    }
+  }
+}
+
+function renderVistaPreviaPlanilla() {
+  const sel = document.getElementById('select-almacen-planilla');
+  const almNombre = sel ? sel.value : (almacenes[0] ? almacenes[0].nombre : 'CAMION DONFENG');
+  
+  const k = `stock_${almNombre.toLowerCase()}`;
+  const materiales = inventario.filter(p => (p[k] || 0) > 0);
+
+  let filasMat = '';
+  materiales.forEach((m, idx) => {
+    filasMat += `<tr>
+      <td style="text-align:center;">${idx + 1}</td>
+      <td style="font-weight:bold;text-align:center;">${m.codigo}</td>
+      <td style="text-transform:uppercase;font-weight:600;">${m.nombre}</td>
+      <td style="text-align:center;font-weight:bold;">${m[k]} ${m.medida}(s)</td>
+      <td style="text-align:center;font-size:9px;">[  ] CONFORME<br>[  ] FALTANTE</td>
+      <td style="border-bottom:1px solid #aaa;"></td>
+    </tr>`;
+  });
+
+  if (!materiales.length) {
+    filasMat = '<tr><td colspan="6" style="text-align:center;color:#888;padding:12px;">Sin materiales asignados a este camión. Se imprimen filas de control en blanco:</td></tr>';
+    for(let i=1; i<=10; i++) {
+      filasMat += `<tr>
+        <td style="text-align:center;">${i}</td>
+        <td></td><td></td><td></td>
+        <td style="text-align:center;font-size:9px;">[  ] CONFORME<br>[  ] FALTANTE</td>
+        <td></td>
+      </tr>`;
+    }
+  }
+
+  const htmlPlanilla = `
+    <div style="font-family:'Segoe UI', Arial, sans-serif;color:#000;">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #1e3a8a;padding-bottom:8px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <img src="logo.jpg" alt="Logo Confuserca" style="max-height:50px;width:auto;" onerror="this.src='https://via.placeholder.com/100x40?text=CONFUSERCA'">
+          <div>
+            <h2 style="margin:0;font-size:16px;color:#1e3a8a;font-weight:bold;">CONFUSERCA</h2>
+            <p style="margin:0;font-size:10px;color:#444;">RIF: J-413238713 | CHECKLIST CAMBIO DE GUARDIA</p>
+          </div>
+        </div>
+        <div style="text-align:right;font-size:10px;color:#333;">
+          <div><b>Fecha:</b> ${new Date().toLocaleDateString()}</div>
+          <div><b>Ubicación:</b> ${almNombre.toUpperCase()}</div>
+        </div>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:15px;border:1px solid #444;">
+        <thead>
+          <tr style="background:#f1f5f9;">
+            <th style="border:1px solid #444;padding:6px;width:35px;text-align:center;">ITEM</th>
+            <th style="border:1px solid #444;padding:6px;width:75px;text-align:center;">CÓDIGO</th>
+            <th style="border:1px solid #444;padding:6px;text-align:center;">DESCRIPCIÓN DEL MATERIAL / HERRAMIENTA</th>
+            <th style="border:1px solid #444;padding:6px;width:95px;text-align:center;">STOCK TEÓRICO</th>
+            <th style="border:1px solid #444;padding:6px;width:110px;text-align:center;">ESTADO RECEPCIÓN</th>
+            <th style="border:1px solid #444;padding:6px;width:140px;text-align:center;">OBSERVACIÓN</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filasMat}
+        </tbody>
+      </table>
+
+      <div style="font-size:10px;font-weight:bold;margin-bottom:20px;">
+        📌 OBSERVACIONES GENERALES DEL CAMBIO DE GUARDIA:
+        <div style="border-bottom:1px solid #999;height:24px;margin-top:5px;"></div>
+        <div style="border-bottom:1px solid #999;height:24px;"></div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;gap:15px;margin-top:15px;">
+        <div style="border:1px solid #444;padding:12px;border-radius:6px;width:48%;background:#fff;font-size:10px;">
+          <div style="font-weight:bold;text-align:center;color:#1e3a8a;margin-bottom:12px;text-transform:uppercase;">CUADRILLA SALIENTE (ENTREGA)</div>
+          <div style="margin-bottom:10px;"><b>Chofer / Responsable:</b> ___________________________</div>
+          <div style="margin-bottom:25px;"><b>Cédula:</b> ___________________________</div>
+          <div style="border-top:1px solid #444;text-align:center;padding-top:4px;font-weight:bold;">Firma Entrega Conformidad</div>
+        </div>
+
+        <div style="border:1px solid #444;padding:12px;border-radius:6px;width:48%;background:#fff;font-size:10px;">
+          <div style="font-weight:bold;text-align:center;color:#1e3a8a;margin-bottom:12px;text-transform:uppercase;">CUADRILLA ENTRANTE (RECIBE)</div>
+          <div style="margin-bottom:10px;"><b>Chofer / Responsable:</b> ___________________________</div>
+          <div style="margin-bottom:25px;"><b>Cédula:</b> ___________________________</div>
+          <div style="border-top:1px solid #444;text-align:center;padding-top:4px;font-weight:bold;">Firma Recepción Conformidad</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('contenedor-planilla-previa').innerHTML = htmlPlanilla;
+}
+
+function imprimirPlanillaFisica() {
+  const contenido = document.getElementById('contenedor-planilla-previa').innerHTML;
+  const vent = window.open('', '_blank', 'width=850,height=950');
+  vent.document.write(`
+    <html>
+    <head>
+      <title>Checklist_Cambio_Guardia_CONFUSERCA</title>
+      <style>
+        @page { size: letter portrait; margin: 0.8cm; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; margin:0; padding:10px; color:#000; }
+        table { border-collapse: collapse!important; }
+        th, td { border: 1px solid #333!important; padding:5px!important; }
+      </style>
+    </head>
+    <body>
+      ${contenido}
+      <script>window.onload = function() { window.print(); window.close(); };<\/script>
+    </body>
+    </html>
+  `);
+  vent.document.close();
+}
+
+function imprimirRegistroTraslado(origen, destino, items, fechaParam, usuarioParam) {
+  const usuarioActual = usuarioParam || (currentUser ? currentUser.user : 'admin');
+  const fecha = fechaParam || new Date().toLocaleString();
+
+  let filas = '';
+  items.forEach((it, idx) => {
+    filas += `<tr>
+      <td style="text-align:center;">${idx + 1}</td>
+      <td style="text-align:center;font-weight:bold;">${it.codigo}</td>
+      <td style="text-transform:uppercase;">${it.nombre}</td>
+      <td style="text-align:center;font-weight:bold;">${it.cantidad} ${it.medida}(s)</td>
+    </tr>`;
+  });
+
+  const vent = window.open('', '_blank', 'width=850,height=950');
+  vent.document.write(`
+    <html>
+    <head>
+      <title>Registro_de_Traslado_CONFUSERCA</title>
+      <style>
+        @page { size: letter portrait; margin: 0.8cm; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; padding: 15px; color: #000; background: #fff; }
+        .header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; font-size:10px; color:#555; }
+        .title-block { text-align:center; border-bottom:2px solid #1e3a8a; padding-bottom:8px; margin-bottom:12px; }
+        .title-block h2 { margin:0; font-size:16px; color:#000; text-transform:uppercase; letter-spacing:0.5px; }
+        .title-block p { margin:2px 0 0 0; font-size:10px; font-weight:bold; color:#444; }
+        .meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:11px; margin-bottom:15px; background:#f8fafc; padding:8px; border:1px solid #cbd5e1; border-radius:4px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
+        th, td { border: 1px solid #333; padding: 6px; text-align: left; }
+        th { background: #f1f5f9; font-weight: bold; text-align: center; }
+        .box-firmas { display:flex; justify-content:space-between; gap:15px; margin-top:25px; }
+        .firma-card { border:1px solid #333; padding:12px; border-radius:6px; width:48%; font-size:10px; }
+        .firma-title { font-weight:bold; text-align:center; margin-bottom:12px; text-transform:uppercase; color:#1e3a8a; }
+      </style>
+    </head>
+    <body>
+      <div class="header-top">
+        <div>${fecha}</div>
+        <div>Registro de Traslado - CONFUSERCA</div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;">
+        <img src="logo.jpg" alt="Logo Confuserca" style="max-height:55px;width:auto;" onerror="this.src='https://via.placeholder.com/100x40?text=CONFUSERCA'">
+        <div style="flex-grow:1;" class="title-block">
+          <h2>REGISTRO DE TRASLADO DE MATERIALES</h2>
+          <p>RIF: J-413238713 | CONTROL INTERNO DE INVENTARIO</p>
+        </div>
+      </div>
+
+      <div class="meta-grid">
+        <div><b>FECHA Y HORA:</b> ${fecha}</div>
+        <div><b>OPERADOR / USER:</b> ${usuarioActual}</div>
+        <div><b>ORIGEN:</b> 📍 ${origen}</div>
+        <div><b>DESTINO:</b> 📍 ${destino}</div>
+      </div>
+
+      <div style="font-weight:bold;font-size:11px;margin-bottom:6px;text-transform:uppercase;">DETALLE DE MATERIALES TRASLADADOS</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px;">ITEM</th>
+            <th style="width:90px;">CÓDIGO</th>
+            <th>DESCRIPCIÓN DEL MATERIAL</th>
+            <th style="width:140px;">CANTIDAD TRASLADADA</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filas}
+        </tbody>
+      </table>
+
+      <div class="box-firmas">
+        <div class="firma-card">
+          <div class="firma-title">ENTREGADO POR (DESPACHO)</div>
+          <div style="margin-bottom:8px;"><b>Nombre:</b> ${usuarioActual}</div>
+          <div style="margin-bottom:30px;"><b>Cédula:</b> ___________________________</div>
+          <div style="border-top:1px solid #333;text-align:center;padding-top:4px;font-weight:bold;">Firma del Emisor</div>
+        </div>
+
+        <div class="firma-card">
+          <div class="firma-title">RECIBIDO POR (CONFORMIDAD)</div>
+          <div style="margin-bottom:8px;"><b>Nombre:</b> ___________________________</div>
+          <div style="margin-bottom:30px;"><b>Cédula:</b> ___________________________</div>
+          <div style="border-top:1px solid #333;text-align:center;padding-top:4px;font-weight:bold;">Firma del Receptor</div>
+        </div>
+      </div>
+
+      <script>window.onload = function() { window.print(); window.close(); };<\/script>
+    </body>
+    </html>
+  `);
+  vent.document.close();
+}
+
+function abrirModalCargaMasiva() {
+  itemsMasivosTemporal = [];
+  document.getElementById('masivo-count').innerText = '0';
+  document.getElementById('tabla-vista-previa-masiva').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">Sin datos cargados. Adjunte un archivo.</td></tr>';
+  document.getElementById('btn-confirmar-masivo').style.display = 'none';
+  actualizarSelectDestinoMasivo();
+  document.getElementById('modal-carga-masiva').style.display = 'flex';
+}
+
+function cerrarModalCargaMasiva() {
+  document.getElementById('modal-carga-masiva').style.display = 'none';
+}
+
+function actualizarSelectDestinoMasivo() {
+  const tipo = document.getElementById('masivo-tipo-destino').value;
+  const sel = document.getElementById('masivo-ubicacion-destino');
+  sel.innerHTML = '';
+
+  if (tipo === 'STOCK') {
+    const almacenesStock = almacenes.filter(a => a.tipo === 'Deposito' || a.tipo === 'Vehiculo');
+    almacenesStock.forEach(a => {
+      sel.innerHTML += `<option value="${a.nombre}">📍 ${a.nombre}</option>`;
+    });
+  } else {
+    almacenes.forEach(a => {
+      const icon = a.tipo === 'Trailer/Oficina' ? '🏠' : '🏢';
+      sel.innerHTML += `<option value="${a.nombre}">${icon} ${a.nombre}</option>`;
+    });
+  }
+}
+
+async function procesarArchivoMasivo(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const fileName = file.name.toLowerCase();
+  itemsMasivosTemporal = [];
+
+  if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv')) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+      let idxDesc = -1, idxCant = -1, idxMedida = -1, idxCosto = -1;
+      let headerRowIndex = -1;
+
+      for (let r = 0; r < jsonData.length; r++) {
+        const row = jsonData[r].map(cell => String(cell || '').trim().toLowerCase());
+        const hasDesc = row.some(c => c.includes('descripcion') || c.includes('descripción') || c.includes('producto') || c.includes('bien') || c.includes('item'));
+        
+        if (hasDesc) {
+          headerRowIndex = r;
+          row.forEach((cell, colIdx) => {
+            if (cell.includes('descripcion') || cell.includes('descripción') || cell.includes('producto') || cell.includes('bien')) idxDesc = colIdx;
+            else if (cell.includes('cantidad') || cell.includes('cant')) idxCant = colIdx;
+            else if (cell.includes('unidad') || cell.includes('medida') || cell.includes('und')) idxMedida = colIdx;
+            else if (cell.includes('costo') || cell.includes('precio') || cell.includes('valor')) idxCosto = colIdx;
+          });
+          break;
+        }
+      }
+
+      if (headerRowIndex === -1) headerRowIndex = 0;
+      if (idxDesc === -1) idxDesc = 1;
+      if (idxCant === -1) idxCant = 2;
+      if (idxMedida === -1) idxMedida = 3;
+
+      for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        if (row && row.length > 0) {
+          const rawNombre = row[idxDesc];
+          if (rawNombre && String(rawNombre).trim() !== '' && String(rawNombre).toLowerCase() !== 'descripcion') {
+            const nombre = String(rawNombre).trim();
+            const cantidad = idxCant !== -1 && row[idxCant] !== undefined ? (parseFloat(row[idxCant]) || 1) : 1;
+            const medida = idxMedida !== -1 && row[idxMedida] ? String(row[idxMedida]).trim() : 'Unidad';
+            const costo = idxCosto !== -1 && row[idxCosto] ? (parseFloat(row[idxCosto]) || 0) : 0;
+
+            itemsMasivosTemporal.push({ nombre, cantidad, costo, medida });
+          }
+        }
+      }
+      renderVistaPreviaMasiva();
+    };
+    reader.readAsArrayBuffer(file);
+  } else if (fileName.endsWith('.pdf')) {
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        const typedarray = new Uint8Array(e.target.result);
+        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+        let textFull = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          textFull += content.items.map(s => s.str).join(' ') + '\n';
+        }
+        
+        const lines = textFull.split('\n');
+        lines.forEach(l => {
+          if (l.trim().length > 3) {
+            itemsMasivosTemporal.push({ nombre: l.trim().substring(0, 50), cantidad: 1, costo: 0, medida: 'Unidad' });
+          }
+        });
+        renderVistaPreviaMasiva();
+      } catch(err) {
+        alert('Error leyendo el PDF.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+function renderVistaPreviaMasiva() {
+  const tb = document.getElementById('tabla-vista-previa-masiva');
+  document.getElementById('masivo-count').innerText = itemsMasivosTemporal.length;
+
+  if (!itemsMasivosTemporal.length) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">No se detectaron ítems válidos en el archivo.</td></tr>';
+    document.getElementById('btn-confirmar-masivo').style.display = 'none';
+    return;
+  }
+
+  let html = '';
+  itemsMasivosTemporal.forEach((item, idx) => {
+    html += `<tr>
+      <td>${idx + 1}</td>
+      <td><b>${item.nombre}</b></td>
+      <td>${item.cantidad}</td>
+      <td>${item.medida}</td>
+      <td>$${item.costo.toFixed(2)}</td>
+    </tr>`;
+  });
+
+  tb.innerHTML = html;
+  document.getElementById('btn-confirmar-masivo').style.display = 'inline-block';
+}
+
+function normalizarTexto(txt) {
+  return (txt || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, " ").trim();
+}
+
+function sonItemsSimilares(nombre1, nombre2) {
+  const n1 = normalizarTexto(nombre1);
+  const n2 = normalizarTexto(nombre2);
+  
+  if (n1 === n2) return true;
+
+  const palabras1 = n1.split(' ').filter(p => p.length > 2);
+  const palabras2 = n2.split(' ').filter(p => p.length > 2);
+
+  if (palabras1.length === 0 || palabras2.length === 0) return false;
+
+  const palabrasComunes = palabras1.filter(p => palabras2.includes(p));
+  const proporcion = palabrasComunes.length / Math.min(palabras1.length, palabras2.length);
+
+  return proporcion >= 0.75;
+}
+
+async function confirmarEInsertarMasivo() {
+  if (!itemsMasivosTemporal.length) return;
+  const tipoDestino = document.getElementById('masivo-tipo-destino').value;
+  const ubiDestino = document.getElementById('masivo-ubicacion-destino').value;
+
+  if (tipoDestino === 'STOCK') {
+    for (const item of itemsMasivosTemporal) {
+      const exist = inventario.find(p => sonItemsSimilares(p.nombre, item.nombre));
+
+      if (exist) {
+        const k = `stock_${ubiDestino.toLowerCase()}`;
+        exist[k] = (exist[k] || 0) + item.cantidad;
+        if (item.costo > 0) exist.costo = item.costo;
+        const stocksObj = {}; almacenes.forEach(a => stocksObj[`stock_${a.nombre.toLowerCase()}`] = exist[`stock_${a.nombre.toLowerCase()}`] || 0);
+        await agregarAColaSync('inventario', 'UPDATE', { codigo: exist.codigo, stocks: stocksObj, costo: exist.costo });
+        registrarHistorial('INGRESO', exist.codigo, exist.nombre, item.cantidad, item.medida, `Stock acumulado en: ${ubiDestino}`);
+      } else {
+        let max = 0;
+        inventario.forEach(p => { if (p.codigo && p.codigo.startsWith('CF')) { const n = parseInt(p.codigo.replace('CF','')); if (n > max) max = n; } });
+        const nuevoCod = 'CF' + String(max + 1).padStart(4, '0');
+        const stocksObj = {}; almacenes.forEach(a => stocksObj[`stock_${a.nombre.toLowerCase()}`] = 0);
+        stocksObj[`stock_${ubiDestino.toLowerCase()}`] = item.cantidad;
+
+        const np = { codigo: nuevoCod, nombre: item.nombre, categoria: asignarCategoria(item.nombre), medida: item.medida, minimo: 5, reorden: 10, costo: item.costo, stocks: stocksObj };
+        await agregarAColaSync('inventario', 'INSERT', np);
+        inventario.push({ ...np, ...stocksObj });
+        registrarHistorial('CREACIÓN', nuevoCod, item.nombre, item.cantidad, item.medida, `Nuevo ítem masivo en: ${ubiDestino}`);
+      }
+    }
+  } else {
+    for (const item of itemsMasivosTemporal) {
+      const exist = activosFijos.find(a => sonItemsSimilares(a.nombre, item.nombre) && a.ubicacion.toLowerCase() === ubiDestino.toLowerCase());
+
+      if (exist) {
+        if (item.costo > 0) exist.costo = item.costo;
+        await agregarAColaSync('activos', 'UPDATE', { codigo: exist.codigo, costo: exist.costo });
+        registrarHistorial('ACTIVO_FIJO', exist.codigo, exist.nombre, 1, 'Bien', `Actualización de valor masivo en: ${ubiDestino}`);
+      } else {
+        let max = 0;
+        activosFijos.forEach(a => { if (a.codigo && a.codigo.startsWith('ACT')) { const n = parseInt(a.codigo.replace('ACT','')); if (n > max) max = n; } });
+        const codigo = 'ACT' + String(max + 1).padStart(4, '0');
+        const nuevoActivo = { codigo, nombre: item.nombre, categoria: 'Mobiliario', ubicacion: ubiDestino, marca: 'Generico', serie: 'S/N', costo: item.costo, estado: 'Excelente', responsable: 'General', fechaIngreso: new Date().toLocaleDateString() };
+        
+        activosFijos.unshift(nuevoActivo);
+        await agregarAColaSync('activos', 'INSERT', nuevoActivo);
+        registrarHistorial('ACTIVO_FIJO', codigo, item.nombre, 1, 'Bien', `Carga Masiva Activo en: ${ubiDestino}`);
+      }
+    }
+  }
+
+  await guardarEnMemoria();
+  actualizarDashboard();
+  renderTablaActivos();
+  cerrarModalCargaMasiva();
+  alert(`🎉 ¡Proceso finalizado! Se procesaron ${itemsMasivosTemporal.length} ítems en "${ubiDestino}".`);
+}
+
+async function crearTrailerRapido() {
+  const nombre = prompt('Ingrese el nombre de la nueva estructura (Ej: Trailer Oficina Km 40, Comedor Campo):');
+  if (!nombre) return;
+  const detalle = prompt('Ingrese detalle o sector (Ej: Sector Km 40, Base Operaciones):', 'Base Operaciones');
+
+  const existe = almacenes.some(a => a.nombre.toLowerCase() === nombre.trim().toLowerCase());
+  if (existe) return alert(`Ya existe una ubicación con el nombre "${nombre}".`);
+
+  const nuevoTrailer = { nombre: nombre.trim(), tipo: 'Trailer/Oficina', detalle: detalle ? detalle.trim() : 'Estructura Fija' };
+  almacenes.push(nuevoTrailer);
+  await agregarAColaSync('almacenes', 'INSERT', nuevoTrailer);
+  
+  guardarEnMemoria();
+  llenarSelectsAlmacenes();
+  renderTablaActivos();
+  alert(`✅ Ubicación "${nuevoTrailer.nombre}" creada con éxito.`);
+}
+
+async function guardarActivoFijo(e) {
+  e.preventDefault();
+  const nombre = document.getElementById('act-nombre').value.trim();
+  const categoria = document.getElementById('act-categoria').value;
+  const ubicacion = document.getElementById('act-ubicacion').value;
+  const costoInput = document.getElementById('act-costo').value;
+  const costo = costoInput !== "" ? parseFloat(costoInput) : 0;
+  const marca = document.getElementById('act-marca') ? document.getElementById('act-marca').value.trim() : 'Generico';
+  const serie = document.getElementById('act-serie').value.trim() || 'S/N';
+  const estado = document.getElementById('act-estado').value;
+  const responsable = document.getElementById('act-responsable').value.trim() || 'General';
+
+  let max = 0;
+  activosFijos.forEach(a => { if (a.codigo && a.codigo.startsWith('ACT')) { const n = parseInt(a.codigo.replace('ACT','')); if (n > max) max = n; } });
+  const codigo = 'ACT' + String(max + 1).padStart(4, '0');
+
+  const nuevoActivo = { codigo, nombre, categoria, ubicacion, costo, marca, serie, estado, responsable, fechaIngreso: new Date().toLocaleDateString() };
+  activosFijos.unshift(nuevoActivo);
+  await agregarAColaSync('activos', 'INSERT', nuevoActivo);
+  registrarHistorial('ACTIVO_FIJO', codigo, nombre, 1, 'Bien', `Registrado en: ${ubicacion} | Estado: ${estado}`);
+
+  guardarEnMemoria();
+  renderTablaActivos();
+  e.target.reset();
+  alert(`✅ Activo registrado con código ${codigo}`);
+}
+
+async function editarCostoActivoFijo(codigo) {
+  const isAdmin = currentUser && currentUser.user.toLowerCase() === 'admin';
+  if (!isAdmin) return alert('Solo administradores pueden editar el costo o valor de los activos.');
+
+  const activo = activosFijos.find(a => a.codigo === codigo);
+  if (!activo) return;
+
+  const actual = activo.costo || 0;
+  const nuevoStr = prompt(`Cargar o actualizar valor monetario ($) para el activo "${activo.nombre}":`, actual);
+  if (nuevoStr === null) return;
+
+  const nuevoCosto = parseFloat(nuevoStr);
+  if (isNaN(nuevoCosto) || nuevoCosto < 0) return alert('Por favor ingresa un monto válido.');
+
+  activo.costo = nuevoCosto;
+  await agregarAColaSync('activos', 'UPDATE', { codigo, costo: nuevoCosto });
+  registrarHistorial('ACTIVO_FIJO', codigo, activo.nombre, 1, 'Bien', `Valor actualizado a $${nuevoCosto.toFixed(2)}`);
+
+  guardarEnMemoria();
+  renderTablaActivos();
+  alert(`✅ Valor monetario de "${activo.nombre}" actualizado a $${nuevoCosto.toFixed(2)}`);
+}
+
+function renderTablaActivos() {
+  const busqueda = (document.getElementById('filtro-activo').value || '').toLowerCase();
+  const filtroUbi = document.getElementById('filtro-ubicacion-act').value;
+  const tb = document.getElementById('tabla-activos');
+  if (!tb) return;
+
+  let tot = 0, ubiCount = new Set(), op = 0, dan = 0, valTotActivos = 0, html = '';
+  const isAdmin = currentUser && currentUser.user.toLowerCase() === 'admin';
+
+  activosFijos.forEach(a => {
+    tot++; ubiCount.add(a.ubicacion);
+    const cost = a.costo || 0;
+    valTotActivos += cost;
+
+    if (a.estado === 'Excelente' || a.estado === 'Operativo') op++;
+    if (a.estado === 'En Reparacion' || a.estado === 'Dañado') dan++;
+
+    if (filtroUbi !== 'TODOS' && a.ubicacion !== filtroUbi) return;
+    if (busqueda && !a.nombre.toLowerCase().includes(busqueda) && !a.codigo.toLowerCase().includes(busqueda) && !a.ubicacion.toLowerCase().includes(busqueda) && !a.serie.toLowerCase().includes(busqueda)) return;
+
+    let badgeEst = '<span class="badge b-ok">Operativo</span>';
+    if (a.estado === 'En Reparacion') badgeEst = '<span class="badge b-war">Reparación</span>';
+    if (a.estado === 'Dañado') badgeEst = '<span class="badge b-dan">Dañado</span>';
+
+    const costTxt = cost > 0 ? `$${cost.toFixed(2)}` : '<span style="color:#94a3b8;font-style:italic;">$0.00</span>';
+
+    html += `<tr>
+      <td style="font-weight:bold;color:var(--pri);">${a.codigo}</td>
+      <td><b>${a.nombre}</b><br><small style="color:#666;">Serie/Marca: ${a.serie} (${a.marca||'S/D'})</small></td>
+      <td><span class="tag-cat cat-general">${a.categoria}</span></td>
+      <td>🏠 <b>${a.ubicacion}</b><br><small style="color:#666;">Resp: ${a.responsable}</small></td>
+      <td style="font-weight:bold;color:#059669;">${costTxt}</td>
+      <td>${badgeEst}</td>
+      <td>
+        ${isAdmin ? `<button class="btn-act" style="background:#e0f2fe;" onclick="editarCostoActivoFijo('${a.codigo}')" title="Cargar Valor / Factura">💲 Val</button>` : ''}
+        <button class="btn-act" onclick="mostrarQR('${a.codigo}','${a.nombre}',1,'Unidad','${a.ubicacion}','Estado: ${a.estado}')">🖨️ QR</button>
+        <button class="btn-act btn-del" onclick="eliminarActivoFijo('${a.codigo}')">🗑️</button>
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById('act-totales').innerText = tot;
+  document.getElementById('act-ubicaciones').innerText = ubiCount.size;
+  document.getElementById('act-operativos').innerText = op;
+  document.getElementById('act-valor-total').innerText = `$${valTotActivos.toFixed(2)}`;
+  tb.innerHTML = html || '<tr><td colspan="7" style="text-align:center;">Sin activos registrados.</td></tr>';
+}
+
+async function eliminarActivoFijo(codigo) {
+  if (confirm(`¿Desincorporar o eliminar el activo ${codigo}?`)) {
+    activosFijos = activosFijos.filter(a => a.codigo !== codigo);
+    await agregarAColaSync('activos', 'DELETE', { codigo });
+    guardarEnMemoria();
+    renderTablaActivos();
+  }
+}
+
+function cambiarLabelTipoAlm() {
+  const tipo = document.getElementById('nuevo-alm-tipo').value;
+  const lbl = document.getElementById('lbl-alm-detalle');
+  const inp = document.getElementById('nuevo-alm-detalle');
+  if (tipo === 'Vehiculo') {
+    lbl.innerText = 'Placa del Vehículo (Requerido):'; inp.placeholder = 'ej. ABC-123D';
+  } else if (tipo === 'Trailer/Oficina') {
+    lbl.innerText = 'Ubicación / Sector Físico:'; inp.placeholder = 'ej. Base Maracaibo / Km 40';
+  } else {
+    lbl.innerText = 'Descripción / Ubicación:'; inp.placeholder = 'ej. Zona Norte / Depósito 1';
+  }
+}
+
+function asignarCategoria(n) {
+  if (!n) return 'Consumibles Generales';
+  n = n.toLowerCase();
+
+  const kwHerramientas = ['kit', 'juego', 'dado', 'dados', 'rache', 'ratche', 'troquel', 'troqueles', 'llave', 'llaves', 'llavines', 'destornillador', 'desarmador', 'martillo', 'alicate', 'pinza', 'prensa', 'taladro', 'sierra', 'esmeril', 'metro', 'mazo', 'torquimetro', 'escoba', 'pala', 'balde', 'marca metal'];
+  if (kwHerramientas.some(p => n.includes(p))) return 'Herramientas';
+
+  const kwCombustibles = ['gasolina', 'gasoil', 'diesel', 'diésel', 'combustible', 'kerosen', 'nafta'];
+  if (kwCombustibles.some(p => n.includes(p))) return 'Combustibles';
+
+  const kwFlota = ['aceite', 'lubricante', 'refrigerante', 'liga', 'freno', 'grasa', 'filtro', 'bujia', 'bateria', 'valvulina', 'motor', 'flota', 'jabon para vehiculo'];
+  if (kwFlota.some(p => n.includes(p))) return 'Lubricantes y Flota';
+
+  const kwQuimicos = ['cloro', 'desinfectante', 'detergente', 'jabon', 'limpiador', 'ácido', 'pintura', 'solvente', 'alcohol', 'desengrasante', 'thinner', 'silicona', 'champu', 'jabon lava plato'];
+  if (kwQuimicos.some(p => n.includes(p))) return 'Químicos y Limpieza';
+
+  return 'Consumibles Generales';
+}
+
+function autoselectCategoriaForm() {
+  const nom = document.getElementById('prod-nombre').value;
+  const sel = document.getElementById('prod-categoria');
+  if (sel.value === 'AUTO' || !sel.value) {
+    sel.value = asignarCategoria(nom);
+  }
+}
+
+async function recategorizarTodoMasivo() {
+  let contador = 0;
+  inventario.forEach(p => {
+    const catCorrecta = asignarCategoria(p.nombre);
+    if (p.categoria !== catCorrecta) {
+      p.categoria = catCorrecta; contador++;
+      agregarAColaSync('inventario', 'UPDATE', { codigo: p.codigo, categoria: catCorrecta });
+    }
+  });
+
+  if (contador > 0) {
+    await guardarEnMemoria(); actualizarDashboard();
+    alert(`✅ ¡Excelente! Se re-clasificaron automáticamente ${contador} producto(s).`);
+  } else {
+    alert('👍 Todos los productos ya están clasificados correctamente.');
+  }
+}
+
+function getClaseCategoria(c) {
+  switch(c) {
+    case 'Combustibles': return 'cat-combustibles';
+    case 'Herramientas': return 'cat-herramientas';
+    case 'Químicos y Limpieza': return 'cat-quimicos';
+    case 'Lubricantes y Flota': return 'cat-flota';
+    default: return 'cat-consumibles';
+  }
+}
+
+async function login(e) {
+  if(e) e.preventDefault();
+  await cargarDatosDesdeNube();
+  
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value.trim();
+  const usr = usuarios.find(x => x.user.toLowerCase() === u.toLowerCase() && x.pass === p);
+  
+  if (!usr) return alert('Usuario o contraseña incorrectos.');
+  if (!usr.activo) return alert('Este usuario se encuentra desactivado.');
+
+  currentUser = usr;
+  localStorage.setItem('confuserca_user', JSON.stringify(usr));
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  initUI();
+}
+
+function logout() {
+  currentUser = null;
+  localStorage.removeItem('confuserca_user');
+  document.getElementById('login-overlay').style.display = 'flex';
+}
+
+function tienePermiso(p) {
+  if (!currentUser) return false;
+  if (currentUser.user.toLowerCase() === 'admin') return true;
+  return !!(currentUser.perms && currentUser.perms[p]);
+}
+
+function aplicarPermisosUI() {
+  const p = currentUser.perms || {};
+  const isAdmin = currentUser.user.toLowerCase() === 'admin';
+
+  document.getElementById('user-role-display').innerText = `Usuario: ${currentUser.user} ${isAdmin ? '(Admin)' : ''}`;
+  document.getElementById('nav-dash').style.display = (isAdmin || p.dash) ? 'flex' : 'none';
+  document.getElementById('nav-historial').style.display = (isAdmin || p.hist) ? 'flex' : 'none';
+  document.getElementById('nav-ingresar').style.display = (isAdmin || p.ing) ? 'flex' : 'none';
+  document.getElementById('nav-salidas').style.display = (isAdmin || p.sal) ? 'flex' : 'none';
+  document.getElementById('nav-traslados').style.display = (isAdmin || p.tras) ? 'flex' : 'none';
+  document.getElementById('btn-config').style.display = (isAdmin || p.usr || p.alm) ? 'flex' : 'none';
+
+  ['btn-print-dash','btn-print-cat','btn-print-hist'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = (isAdmin || p.exp) ? 'inline-block' : 'none';
+  });
+
+  const cardVal = document.getElementById('card-valor-inventario');
+  const cardCatVal = document.getElementById('card-cat-total-valor');
+  const showVal = (isAdmin || p.val);
+
+  if (cardVal) cardVal.style.display = showVal ? 'block' : 'none';
+  if (cardCatVal) cardCatVal.style.display = showVal ? 'block' : 'none';
+
+  document.querySelectorAll('.col-costo').forEach(el => {
+    el.style.display = showVal ? '' : 'none';
+  });
+}
+
+function initUI() {
+  inventario.forEach(p => { if (!p.categoria) p.categoria = asignarCategoria(p.nombre); });
+  depurarDuplicadosInventario();
+  guardarEnMemoria();
+  
+  renderSidebarAlmacenes();
+  renderConfigAlmacenes();
+  renderConfigUsuarios();
+  llenarSelectsAlmacenes();
+  renderTablaActivos();
+  renderTablaTrasladosRealizados();
+  renderTablaSalidasRealizadas();
+  aplicarPermisosUI();
+
+  if (tienePermiso('dash')) showView('dashboard', document.getElementById('nav-dash'));
+  else if (tienePermiso('ing')) showView('inventario', document.getElementById('nav-ingresar'));
+  else if (tienePermiso('sal')) showView('salidas', document.getElementById('nav-salidas'));
+  else if (tienePermiso('hist')) showView('historial', document.getElementById('nav-historial'));
+  else showView('vista-categoria', null);
+}
+
+function showView(vId, btn) {
+  document.querySelectorAll('.vw').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.bm').forEach(b => b.classList.remove('active'));
+
+  if (vId.startsWith('deposito-')) {
+    document.getElementById('vista-categoria').classList.add('active');
+    categoriaActualGlobal = vId.replace('deposito-', '');
+    document.getElementById('filtro-deposito-input').value = '';
+    actualizarVistaDeposito(categoriaActualGlobal);
+  } else {
+    const target = document.getElementById(vId);
+    if (target) target.classList.add('active');
+    if (vId === 'dashboard') actualizarDashboard();
+    if (vId === 'activos-fijos') renderTablaActivos();
+    if (vId === 'traslados') { carritoTraslado = []; renderCarrito(); renderTablaTrasladosRealizados(); }
+    if (vId === 'salidas') { carritoSalida = []; renderCarritoSalida(); renderTablaSalidasRealizadas(); }
+    if (vId === 'planilla-guardia') renderVistaPreviaPlanilla();
+    if (vId === 'historial') actualizarHistorial();
+    if (vId === 'config') { renderConfigAlmacenes(); renderConfigUsuarios(); }
+    if (vId.startsWith('almacen-')) {
+      const almNombre = vId.replace('almacen-', '');
+      const inp = document.getElementById(`filtro-alm-${almNombre}`);
+      if (inp) inp.value = '';
+      actualizarVistaAlmacen(almNombre);
+    }
+  }
+  if (btn) btn.classList.add('active');
+}
+
+async function editarCostoProducto(codigo) {
+  const isAdmin = currentUser && currentUser.user.toLowerCase() === 'admin';
+  if (!isAdmin) return alert('Solo administradores pueden editar costos.');
+
+  const p = inventario.find(x => x.codigo === codigo);
+  if (!p) return;
+
+  const actual = p.costo || 0;
+  const nuevoStr = prompt(`Actualizar costo ($) para "${p.nombre}":`, actual);
+  if (nuevoStr === null) return;
+
+  const nuevoCosto = parseFloat(nuevoStr);
+  if (isNaN(nuevoCosto) || nuevoCosto < 0) return alert('Por favor ingresa un número válido.');
+
+  p.costo = nuevoCosto;
+  await agregarAColaSync('inventario', 'UPDATE', { codigo, costo: nuevoCosto });
+  registrarHistorial('INGRESO', p.codigo, p.nombre, 0, p.medida, `Actualización de costo a $${nuevoCosto.toFixed(2)}`);
+  
+  guardarEnMemoria(); actualizarDashboard(); alert(`✅ Costo actualizado a $${nuevoCosto.toFixed(2)}`);
+}
+
+async function guardarProducto(e) {
+  e.preventDefault();
+  if (!tienePermiso('ing')) return alert('Sin permiso para ingresar stock.');
+
+  const nombre = document.getElementById('prod-nombre').value.trim();
+  const catSeleccionada = document.getElementById('prod-categoria').value;
+  const categoria = (catSeleccionada === 'AUTO' || !catSeleccionada) ? asignarCategoria(nombre) : catSeleccionada;
+
+  const medida = document.getElementById('prod-medida').value;
+  const minimo = parseFloat(document.getElementById('prod-minimo').value);
+  const reorden = parseFloat(document.getElementById('prod-reorden').value);
+  const cantidad = parseFloat(document.getElementById('prod-cantidad').value);
+  const costoTotalInput = document.getElementById('prod-costo').value;
+  const costoTotal = costoTotalInput !== "" ? parseFloat(costoTotalInput) : 0;
+  const costoUnit = cantidad > 0 ? (costoTotal / cantidad) : 0;
+  const lote = document.getElementById('prod-lote').value;
+  const vencimiento = document.getElementById('prod-vencimiento').value || null;
+  const almacen = document.getElementById('prod-almacen').value;
+
+  const exist = inventario.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+
+  if (exist) {
+    if (confirm(`¿Sumar ${cantidad} ${medida}(s) a "${nombre}" en ${almacen}?`)) {
+      const k = `stock_${almacen.toLowerCase()}`;
+      exist[k] = (exist[k] || 0) + cantidad;
+      exist.categoria = categoria;
+      if (lote) exist.lote = lote;
+      if (vencimiento) exist.vencimiento = vencimiento;
+      if (costoUnit > 0) exist.costo = costoUnit;
+
+      const stocksObj = {}; almacenes.forEach(a => stocksObj[`stock_${a.nombre.toLowerCase()}`] = exist[`stock_${a.nombre.toLowerCase()}`] || 0);
+      await agregarAColaSync('inventario', 'UPDATE', { codigo: exist.codigo, categoria, stocks: stocksObj, costo: exist.costo, lote: exist.lote, vencimiento: exist.vencimiento });
+
+      registrarHistorial('INGRESO', exist.codigo, exist.nombre, cantidad, medida, `Ingreso en ${almacen}`);
+      guardarEnMemoria(); actualizarDashboard(); alert('✅ Stock actualizado.');
+    }
+  } else {
+    let max = 0;
+    inventario.forEach(p => { if (p.codigo && p.codigo.startsWith('CF')) { const n = parseInt(p.codigo.replace('CF','')); if (n > max) max = n; } });
+    const nuevoCod = 'CF' + String(max + 1).padStart(4, '0');
+
+    const stocksObj = {}; almacenes.forEach(a => stocksObj[`stock_${a.nombre.toLowerCase()}`] = 0);
+    stocksObj[`stock_${almacen.toLowerCase()}`] = cantidad;
+
+    const np = { codigo: nuevoCod, nombre, categoria, medida, minimo, reorden, costo: costoUnit, lote, vencimiento, stocks: stocksObj };
+    await agregarAColaSync('inventario', 'INSERT', np);
+    inventario.push({ ...np, ...stocksObj });
+    depurarDuplicadosInventario();
+
+    registrarHistorial('CREACIÓN', nuevoCod, nombre, cantidad, medida, `Registro en ${almacen}`);
+    guardarEnMemoria(); actualizarDashboard(); alert(`✅ Creado con código ${nuevoCod}`);
+  }
+  e.target.reset();
+}
+
+function mostrarListaBuscador() {
+  document.getElementById('lista-buscador-prod').classList.add('open');
+  filtrarBuscador();
+}
+
+function filtrarBuscador() {
+  const txt = document.getElementById('input-buscador-prod').value.toLowerCase();
+  const ls = document.getElementById('lista-buscador-prod');
+  ls.innerHTML = '';
+  const fl = inventario.filter(p => p.nombre.toLowerCase().includes(txt) || p.codigo.toLowerCase().includes(txt));
+  if (!fl.length) {
+    ls.innerHTML = '<div class="bs-it" style="color:#999;">Sin coincidencias</div>';
+  } else {
+    fl.forEach(p => {
+      const d = document.createElement('div');
+      d.className = 'bs-it';
+      d.innerHTML = `<strong>${p.codigo}</strong> - ${p.nombre} (${p.medida})`;
+      d.onclick = () => agregarAlCarrito(p);
+      ls.appendChild(d);
+    });
+  }
+}
+
+function agregarAlCarrito(p) {
+  document.getElementById('lista-buscador-prod').classList.remove('open');
+  document.getElementById('input-buscador-prod').value = '';
+  if (carritoTraslado.some(i => i.codigo === p.codigo)) return alert('Ya está en la lista.');
+  carritoTraslado.push({ id: p.id, codigo: p.codigo, nombre: p.nombre, medida: p.medida, cantidad: 1 });
+  renderCarrito();
+}
+
+function renderCarrito() {
+  const c = document.getElementById('carrito-traslado');
+  if (!carritoTraslado.length) { c.innerHTML = '<p style="text-align:center;color:#888;margin:0;">Sin productos seleccionados.</p>'; return; }
+  let h = '';
+  carritoTraslado.forEach((item, idx) => {
+    h += `<div class="cart-i">
+      <div><strong>${item.codigo}</strong> - ${item.nombre}</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <input type="number" min="0.01" step="any" value="${item.cantidad}" onchange="carritoTraslado[${idx}].cantidad=parseFloat(this.value)||0">
+        <button type="button" class="btn-act btn-del" onclick="carritoTraslado.splice(${idx},1);renderCarrito();">🗑️</button>
+      </div>
+    </div>`;
+  });
+  c.innerHTML = h;
+}
+
+function mostrarListaBuscadorSalida() {
+  document.getElementById('lista-buscador-salida').classList.add('open');
+  filtrarBuscadorSalida();
+}
+
+function filtrarBuscadorSalida() {
+  const txt = document.getElementById('input-buscador-salida').value.toLowerCase();
+  const ls = document.getElementById('lista-buscador-salida');
+  ls.innerHTML = '';
+  const fl = inventario.filter(p => p.nombre.toLowerCase().includes(txt) || p.codigo.toLowerCase().includes(txt));
+  if (!fl.length) {
+    ls.innerHTML = '<div class="bs-it" style="color:#999;">Sin coincidencias</div>';
+  } else {
+    fl.forEach(p => {
+      const d = document.createElement('div');
+      d.className = 'bs-it';
+      d.innerHTML = `<strong>${p.codigo}</strong> - ${p.nombre} (${p.medida})`;
+      d.onclick = () => agregarAlCarritoSalida(p);
+      ls.appendChild(d);
+    });
+  }
+}
+
+function agregarAlCarritoSalida(p) {
+  document.getElementById('lista-buscador-salida').classList.remove('open');
+  document.getElementById('input-buscador-salida').value = '';
+  if (carritoSalida.some(i => i.codigo === p.codigo)) return alert('Este producto ya fue agregado a la salida.');
+  carritoSalida.push({ id: p.id, codigo: p.codigo, nombre: p.nombre, medida: p.medida, cantidad: 1 });
+  renderCarritoSalida();
+}
+
+function renderCarritoSalida() {
+  const c = document.getElementById('carrito-salida');
+  if (!c) return;
+  if (!carritoSalida.length) { c.innerHTML = '<p style="text-align:center;color:#888;margin:0;">Sin productos seleccionados para salida.</p>'; return; }
+  let h = '';
+  carritoSalida.forEach((item, idx) => {
+    h += `<div class="cart-i">
+      <div><strong>${item.codigo}</strong> - ${item.nombre} (${item.medida})</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <input type="number" min="0.01" step="any" value="${item.cantidad}" onchange="carritoSalida[${idx}].cantidad=parseFloat(this.value)||0">
+        <button type="button" class="btn-act btn-del" onclick="carritoSalida.splice(${idx},1);renderCarritoSalida();">🗑️</button>
+      </div>
+    </div>`;
+  });
+  c.innerHTML = h;
+}
+
+async function guardarSalida(e) {
+  e.preventDefault();
+  if (!tienePermiso('sal')) return alert('Sin permiso para registrar salidas.');
+
+  const ori = document.getElementById('sal-origen').value;
+  const des = document.getElementById('sal-destino-equipo').value;
+  const mot = document.getElementById('sal-motivo').value;
+  const receptor = document.getElementById('sal-receptor').value.trim() || 'No especificado';
+  const obs = document.getElementById('sal-observaciones').value.trim() || 'Sin observaciones';
+
+  if (!carritoSalida.length) return alert('Seleccione al menos un producto.');
+
+  let err = '';
+  carritoSalida.forEach(item => {
+    const p = inventario.find(x => x.codigo === item.codigo);
+    const stk = p[`stock_${ori.toLowerCase()}`] || 0;
+    if (stk < item.cantidad) err += `- ${p.nombre}: Stock en ${ori} es ${stk}, solicitado: ${item.cantidad}\n`;
+  });
+
+  if (err) return alert(`⚠️ Stock Insuficiente:\n${err}`);
+
+  const listaMaterialesImprimir = [...carritoSalida];
+  const fechaActual = new Date().toLocaleString();
+  const usuarioActual = currentUser ? currentUser.user : 'Sistema';
+
+  for (const item of carritoSalida) {
+    const p = inventario.find(x => x.codigo === item.codigo);
+    const ko = `stock_${ori.toLowerCase()}`;
+    p[ko] -= item.cantidad;
+
+    const stocksObj = {}; almacenes.forEach(a => stocksObj[`stock_${a.nombre.toLowerCase()}`] = p[`stock_${a.nombre.toLowerCase()}`] || 0);
+    await agregarAColaSync('inventario', 'UPDATE', { codigo: p.codigo, stocks: stocksObj });
+
+    const detalleKardex = `${mot} ➔ Asignado a: ${des} | Recibe: ${receptor} | Obs: ${obs}`;
+    registrarHistorial('SALIDA', item.codigo, item.nombre, item.cantidad, item.medida, detalleKardex);
+  }
+
+  const nuevoRegSalida = { id: Date.now(), fecha: fechaActual, usuario: usuarioActual, origen: ori, destinoEquipo: des, motivo: mot, receptor, observaciones: obs, items: listaMaterialesImprimir };
+  registrosSalidas.unshift(nuevoRegSalida);
+
+  guardarEnMemoria(); actualizarDashboard(); renderTablaSalidasRealizadas();
+  imprimirRegistroSalida(ori, des, mot, receptor, obs, listaMaterialesImprimir, fechaActual, usuarioActual);
+
+  carritoSalida = []; renderCarritoSalida(); e.target.reset();
+}
+
+function renderTablaSalidasRealizadas() {
+  const tb = document.getElementById('tabla-historial-salidas');
+  if (!tb) return;
+  if (!registrosSalidas.length) {
+    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888;">Sin salidas registradas.</td></tr>';
+    return;
+  }
+  let h = '';
+  registrosSalidas.forEach((s, idx) => {
+    const totalCant = s.items.reduce((acc, curr) => acc + curr.cantidad, 0);
+    h += `<tr>
+      <td style="font-size:11px;color:#666;">${s.fecha}</td>
+      <td><b>${s.origen}</b> ➔ <b>${s.destinoEquipo}</b></td>
+      <td>${s.items.length} tipo(s) (${totalCant} unids)</td>
+      <td><button class="btn-act" style="background:#fee2e2;" onclick="reimprimirSalida(${idx})">🖨️ Vale</button></td>
+    </tr>`;
+  });
+  tb.innerHTML = h;
+}
+
+function reimprimirSalida(idx) {
+  const s = registrosSalidas[idx];
+  if (s) imprimirRegistroSalida(s.origen, s.destinoEquipo, s.motivo, s.receptor, s.observaciones, s.items, s.fecha, s.usuario);
+}
+
+function imprimirRegistroSalida(origen, destinoEquipo, motivo, receptor, observaciones, items, fechaParam, usuarioParam) {
+  const usuarioActual = usuarioParam || (currentUser ? currentUser.user : 'Sistema');
+  const fecha = fechaParam || new Date().toLocaleString();
+
+  let filas = '';
+  items.forEach((it, idx) => {
+    filas += `<tr>
+      <td style="text-align:center;">${idx + 1}</td>
+      <td style="text-align:center;font-weight:bold;">${it.codigo}</td>
+      <td>${it.nombre}</td>
+      <td style="text-align:center;font-weight:bold;color:#b91c1c;">${it.cantidad} ${it.medida}(s)</td>
+    </tr>`;
+  });
+
+  const vent = window.open('', '_blank', 'width=800,height=900');
+  vent.document.write(`
+    <html>
+    <head><title>Vale de Salida - CONFUSERCA</title></head>
+    <body style="font-family:sans-serif;padding:20px;">
+      <div style="display:flex;align-items:center;gap:15px;margin-bottom:12px;border-bottom:2px solid #1e3a8a;padding-bottom:8px;">
+        <img src="logo.jpg" alt="Logo Confuserca" style="max-height:50px;width:auto;" onerror="this.src='https://via.placeholder.com/100x40?text=CONFUSERCA'">
+        <div>
+          <h2 style="margin:0;color:#1e3a8a;">CONFUSERCA</h2>
+          <p style="margin:0;font-size:11px;color:#555;">RIF: J-413238713 | VALE DE SALIDA Y CONSUMO DE MATERIALES</p>
+        </div>
+      </div>
+      <p style="font-size:12px;"><b>Fecha:</b> ${fecha} | <b>Despachado por:</b> ${usuarioActual}</p>
+      <p style="font-size:12px;"><b>Origen:</b> ${origen} ➔ <b>Destino:</b> ${destinoEquipo}</p>
+      <table border="1" width="100%" style="border-collapse:collapse;font-size:12px;margin-bottom:15px;">
+        <thead><tr style="background:#f1f5f9;"><th>#</th><th>Código</th><th>Descripción</th><th>Cantidad</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <p style="font-size:12px;"><b>Observaciones:</b> ${observaciones}</p>
+      <script>window.onload = function() { window.print(); window.close(); };<\/script>
+    </body>
+    </html>
+  `);
+  vent.document.close();
+}
+
+async function guardarTraslado(e) {
+  e.preventDefault();
+  if (!tienePermiso('tras')) return alert('Sin permiso para traslados.');
+  const ori = document.getElementById('tras-origen').value;
+  const des = document.getElementById('tras-destino').value;
+
+  if (ori === des) return alert('Origen y Destino deben ser distintos.');
+  if (!carritoTraslado.length) return alert('Seleccione al menos un producto.');
+
+  let err = '';
+  carritoTraslado.forEach(item => {
+    const p = inventario.find(x => x.codigo === item.codigo);
+    const stk = p[`stock_${ori.toLowerCase()}`] || 0;
+    if (stk < item.cantidad) err += `- ${p.nombre}: Stock en ${ori} es ${stk}, requerido: ${item.cantidad}\n`;
+  });
+
+  if (err) return alert(`⚠️ Stock Insuficiente:\n${err}`);
+
+  const listaMaterialesImprimir = [...carritoTraslado];
+  const fechaActual = new Date().toLocaleString();
+  const usuarioActual = currentUser ? currentUser.user : 'Sistema';
+
+  for (const item of carritoTraslado) {
+    const p = inventario.find(x => x.codigo === item.codigo);
+    const ko = `stock_${ori.toLowerCase()}`;
+    const kd = `stock_${des.toLowerCase()}`;
+    p[ko] -= item.cantidad;
+    p[kd] = (p[kd] || 0) + item.cantidad;
+
+    const stocksObj = {}; almacenes.forEach(a => stocksObj[`stock_${a.nombre.toLowerCase()}`] = p[`stock_${a.nombre.toLowerCase()}`] || 0);
+    await agregarAColaSync('inventario', 'UPDATE', { codigo: p.codigo, stocks: stocksObj });
+    registrarHistorial('TRASLADO', item.codigo, item.nombre, item.cantidad, item.medida, `De ${ori} a ${des}`);
+  }
+
+  const nuevoRegTras = { id: Date.now(), fecha: fechaActual, usuario: usuarioActual, origen: ori, destino: des, items: listaMaterialesImprimir };
+  registrosTraslados.unshift(nuevoRegTras);
+
+  guardarEnMemoria(); actualizarDashboard(); renderTablaTrasladosRealizados();
+  imprimirRegistroTraslado(ori, des, listaMaterialesImprimir, fechaActual, usuarioActual);
+
+  carritoTraslado = []; renderCarrito(); e.target.reset();
+}
+
+function renderTablaTrasladosRealizados() {
+  const tb = document.getElementById('tabla-historial-traslados');
+  if (!tb) return;
+  if (!registrosTraslados.length) {
+    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888;">Sin traslados registrados.</td></tr>';
+    return;
+  }
+  let h = '';
+  registrosTraslados.forEach((t, idx) => {
+    const totalCant = t.items.reduce((acc, curr) => acc + curr.cantidad, 0);
+    h += `<tr>
+      <td style="font-size:11px;color:#666;">${t.fecha}</td>
+      <td><b>${t.origen}</b> ➔ <b>${t.destino}</b></td>
+      <td>${t.items.length} tipo(s) (${totalCant} unids)</td>
+      <td><button class="btn-act" style="background:#e0f2fe;" onclick="reimprimirTraslado(${idx})">🖨️ Imprimir</button></td>
+    </tr>`;
+  });
+  tb.innerHTML = h;
+}
+
+function reimprimirTraslado(idx) {
+  const t = registrosTraslados[idx];
+  if (t) imprimirRegistroTraslado(t.origen, t.destino, t.items, t.fecha, t.usuario);
+}
+
+async function eliminarProducto(codigo, nombre) {
+  if (!tienePermiso('del')) return alert('Sin permiso para eliminar productos.');
+  if (confirm(`¿Eliminar definitivamente "${nombre}"?`)) {
+    const p = inventario.find(x => x.codigo === codigo);
+    let tot = 0; almacenes.forEach(a => tot += (p[`stock_${a.nombre.toLowerCase()}`] || 0));
+    
+    await agregarAColaSync('inventario', 'DELETE', { codigo });
+    registrarHistorial('ELIMINACIÓN', codigo, nombre, tot, p.medida, 'Producto eliminado');
+    inventario = inventario.filter(x => x.codigo !== codigo);
+    guardarEnMemoria(); actualizarDashboard();
+  }
+}
+
+async function registrarHistorial(tipo, codigo, nombre, cantidad, medida, detalle) {
+  let usrNombre = currentUser ? currentUser.user : 'Sistema';
+  const itemHist = { fecha: new Date().toLocaleString(), tipo, codigo, nombre, cantidad, medida, detalle: `${detalle} | User: ${usrNombre}` };
+
+  historial.unshift(itemHist);
+  try { await localDB.historial.add(itemHist); } catch(e){}
+  await agregarAColaSync('historial', 'INSERT', itemHist);
+}
+
+function renderSidebarAlmacenes() {
+  const c = document.getElementById('dynamic-warehouses'); 
+  const vc = document.getElementById('dynamic-warehouse-views'); 
+  c.innerHTML = ''; vc.innerHTML = '';
+
+  const almacenesStock = almacenes.filter(a => a.tipo === 'Deposito' || a.tipo === 'Vehiculo');
+
+  almacenesStock.forEach(alm => {
+    let icon = (alm.tipo === 'Vehiculo') ? '🚚' : '📍';
+    const b = document.createElement('button');
+    b.className = 'bm'; b.innerText = `${icon} ${alm.nombre}`;
+    b.onclick = function() { showView(`almacen-${alm.nombre}`, this); };
+    c.appendChild(b);
+
+    const div = document.createElement('div');
+    div.id = `almacen-${alm.nombre}`; div.className = 'vw';
+    div.innerHTML = `
+      <div class="hd">
+        <h1>${icon} ${alm.nombre}</h1>
+        <button class="btn-exp" onclick="imprimirReporte()">📄 Imprimir PDF</button>
+      </div>
+      <p style="font-size:12px;color:#666;"><strong>Detalle:</strong> ${alm.detalle || 'N/A'}</p>
+      <div class="cg"><div class="cd"><h3>Productos</h3><p id="res-${alm.nombre}-prod">0</p></div><div class="cd success"><h3>Stock Total</h3><p id="res-${alm.nombre}-total">0</p></div></div>
+      <div class="pn">
+        <div class="fbar"><input type="text" id="filtro-alm-${alm.nombre}" placeholder="🔍 Buscar..." onkeyup="actualizarVistaAlmacen('${alm.nombre}')"></div>
+        <div class="tc"><table><thead><tr><th>Código</th><th>Categoría</th><th>Producto</th><th class="col-costo">Costo ($)</th><th>Existencia</th><th>Acciones</th></tr></thead><tbody id="tabla-${alm.nombre}"></tbody></table></div>
+      </div>
+    `;
+    vc.appendChild(div);
+  });
+}
+
+function renderConfigAlmacenes() {
+  const tb = document.getElementById('tabla-almacenes-config'); tb.innerHTML = '';
+  const isAdmin = currentUser && currentUser.user.toLowerCase() === 'admin';
+
+  almacenes.forEach((alm, idx) => {
+    let icon = alm.tipo === 'Vehiculo' ? '🚚' : (alm.tipo === 'Trailer/Oficina' ? '🏠' : '🏢');
+    tb.innerHTML += `<tr>
+      <td><strong>${alm.nombre}</strong></td>
+      <td>${icon} ${alm.tipo}</td>
+      <td>${alm.detalle || '-'}</td>
+      <td>
+        ${isAdmin ? `<button class="btn-act" onclick="editarAlmacen(${idx})">✏️</button>` : ''}
+        ${almacenes.length > 1 && tienePermiso('alm') ? `<button class="btn-act btn-del" onclick="eliminarAlmacen(${idx})">🗑️</button>` : ''}
+      </td>
+    </tr>`;
+  });
+}
+
+function editarAlmacen(idx) {
+  const alm = almacenes[idx];
+  document.getElementById('alm-edit-index').value = idx;
+  document.getElementById('nuevo-alm-nombre').value = alm.nombre;
+  document.getElementById('nuevo-alm-tipo').value = alm.tipo;
+  cambiarLabelTipoAlm();
+  document.getElementById('nuevo-alm-detalle').value = alm.detalle || '';
+  document.getElementById('btn-alm-guardar').innerText = 'Actualizar Ubicación';
+  document.getElementById('btn-alm-cancelar').style.display = 'inline-block';
+}
+
+function resetFormAlmacen() {
+  document.getElementById('alm-edit-index').value = "-1";
+  document.getElementById('nuevo-alm-nombre').value = '';
+  document.getElementById('nuevo-alm-detalle').value = '';
+  document.getElementById('nuevo-alm-tipo').value = 'Deposito';
+  cambiarLabelTipoAlm();
+  document.getElementById('btn-alm-guardar').innerText = 'Agregar Ubicación';
+  document.getElementById('btn-alm-cancelar').style.display = 'none';
+}
+
+function renderConfigUsuarios() {
+  const tb = document.getElementById('tabla-usuarios-config'); tb.innerHTML = '';
+  usuarios.forEach((u, idx) => {
+    const isMainAdmin = u.user.toLowerCase() === 'admin';
+    tb.innerHTML += `<tr>
+      <td><strong>${u.user}</strong> ${isMainAdmin ? '<small>(Principal)</small>':''}</td>
+      <td><span class="badge ${u.activo ? 'b-ok':'b-dan'}">${u.activo ? 'Activo':'Inactivo'}</span></td>
+      <td>
+        <button class="btn-act" onclick="editarUsuario(${idx})">✏️</button>
+        ${!isMainAdmin ? `<button class="btn-act" onclick="toggleUsuario(${idx})">${u.activo ? '🚫':'✅'}</button>`:''}
+        ${!isMainAdmin ? `<button class="btn-act btn-del" onclick="eliminarUsuario(${idx})">🗑️</button>`:''}
+      </td>
+    </tr>`;
+  });
+}
+
+async function guardarUsuario(e) {
+  e.preventDefault();
+  if (!tienePermiso('usr')) return alert('Sin permiso para usuarios.');
+
+  const idx = parseInt(document.getElementById('u-edit-index').value);
+  const user = document.getElementById('u-nombre').value.trim();
+  const pass = document.getElementById('u-pass').value.trim();
+
+  const perms = {
+    dash: document.getElementById('p-dash').checked,
+    val: document.getElementById('p-val').checked,
+    hist: document.getElementById('p-hist').checked,
+    ing: document.getElementById('p-ing').checked,
+    sal: document.getElementById('p-sal').checked,
+    tras: document.getElementById('p-tras').checked,
+    del: document.getElementById('p-del').checked,
+    alm: document.getElementById('p-alm').checked,
+    usr: document.getElementById('p-usr').checked,
+    exp: document.getElementById('p-exp').checked
+  };
+
+  if (idx >= 0) {
+    usuarios[idx].user = user;
+    if (pass) usuarios[idx].pass = pass;
+    usuarios[idx].perms = perms;
+    await agregarAColaSync('usuarios', 'UPDATE', { username: user, pass: usuarios[idx].pass, perms });
+    alert('✅ Usuario actualizado.');
+  } else {
+    if (usuarios.some(x => x.user.toLowerCase() === user.toLowerCase())) return alert('Nombre de usuario ya existe.');
+    const nu = { username: user, pass, activo: true, perms };
+    await agregarAColaSync('usuarios', 'INSERT', nu);
+    usuarios.push({ user, pass, activo: true, perms });
+    alert('✅ Usuario creado.');
+  }
+
+  guardarEnMemoria(); renderConfigUsuarios(); resetFormUsuario();
+}
+
+function editarUsuario(idx) {
+  const u = usuarios[idx];
+  document.getElementById('u-edit-index').value = idx;
+  document.getElementById('u-nombre').value = u.user;
+  document.getElementById('u-pass').value = u.pass;
+  const p = u.perms || defPerms;
+  document.getElementById('p-dash').checked = !!p.dash;
+  document.getElementById('p-val').checked = !!p.val;
+  document.getElementById('p-hist').checked = !!p.hist;
+  document.getElementById('p-ing').checked = !!p.ing;
+  document.getElementById('p-sal').checked = !!p.sal;
+  document.getElementById('p-tras').checked = !!p.tras;
+  document.getElementById('p-del').checked = !!p.del;
+  document.getElementById('p-alm').checked = !!p.alm;
+  document.getElementById('p-usr').checked = !!p.usr;
+  document.getElementById('p-exp').checked = !!p.exp;
+}
+
+function resetFormUsuario() {
+  document.getElementById('u-edit-index').value = "-1";
+  document.getElementById('form-user').reset();
+}
+
+async function toggleUsuario(idx) {
+  if (usuarios[idx].user.toLowerCase() === 'admin') return;
+  usuarios[idx].activo = !usuarios[idx].activo;
+  await agregarAColaSync('usuarios', 'UPDATE', { username: usuarios[idx].user, activo: usuarios[idx].activo });
+  guardarEnMemoria(); renderConfigUsuarios();
+}
+
+async function eliminarUsuario(idx) {
+  if (usuarios[idx].user.toLowerCase() === 'admin') return alert('No se puede eliminar el admin principal.');
+  if (confirm(`¿Eliminar usuario ${usuarios[idx].user}?`)) {
+    await agregarAColaSync('usuarios', 'DELETE', { username: usuarios[idx].user });
+    usuarios.splice(idx, 1);
+    guardarEnMemoria(); renderConfigUsuarios();
+  }
+}
+
+async function agregarAlmacen() {
+  if (!tienePermiso('alm')) return alert('Sin permiso para almacenes.');
+  const editIdx = parseInt(document.getElementById('alm-edit-index').value);
+  let n = document.getElementById('nuevo-alm-nombre').value.trim();
+  const t = document.getElementById('nuevo-alm-tipo').value;
+  let d = document.getElementById('nuevo-alm-detalle').value.trim();
+
+  if (!n) return alert('Por favor ingresa un nombre.');
+
+  if (editIdx >= 0) {
+    const anteriorNom = almacenes[editIdx].nombre;
+    almacenes[editIdx].nombre = n; almacenes[editIdx].tipo = t; almacenes[editIdx].detalle = d || 'Sin especificación';
+    await agregarAColaSync('almacenes', 'UPDATE', { nombre: anteriorNom, tipo: t, detalle: almacenes[editIdx].detalle });
+    
+    if (anteriorNom.toLowerCase() !== n.toLowerCase()) {
+      const kOld = `stock_${anteriorNom.toLowerCase()}`;
+      const kNew = `stock_${n.toLowerCase()}`;
+      inventario.forEach(p => { if (p[kOld] !== undefined) { p[kNew] = p[kOld]; delete p[kOld]; } });
+    }
+
+    guardarEnMemoria(); renderSidebarAlmacenes(); renderConfigAlmacenes(); llenarSelectsAlmacenes(); actualizarDashboard();
+    resetFormAlmacen();
+    return alert('✅ Ubicación actualizada.');
+  }
+
+  const na = { nombre: n, tipo: t, detalle: d || 'Sin especificación' };
+  await agregarAColaSync('almacenes', 'INSERT', na);
+  almacenes.push(na);
+  guardarEnMemoria(); renderSidebarAlmacenes(); renderConfigAlmacenes(); llenarSelectsAlmacenes();
+  resetFormAlmacen();
+  alert('✅ Ubicación agregada.');
+}
+
+async function eliminarAlmacen(idx) {
+  if (!tienePermiso('alm')) return alert('Sin permiso para almacenes.');
+  if (almacenes.length <= 1) return alert('Debe existir al menos una ubicación.');
+  if (confirm(`¿Eliminar ubicación "${almacenes[idx].nombre}"?`)) {
+    await agregarAColaSync('almacenes', 'DELETE', { nombre: almacenes[idx].nombre });
+    almacenes.splice(idx, 1); guardarEnMemoria(); renderSidebarAlmacenes(); renderConfigAlmacenes(); llenarSelectsAlmacenes(); actualizarDashboard();
+  }
+}
+
+function llenarSelectsAlmacenes() {
+  const almacenesStock = almacenes.filter(a => a.tipo === 'Deposito' || a.tipo === 'Vehiculo');
+  const almacenesActivos = almacenes.filter(a => a.tipo === 'Trailer/Oficina');
+
+  ['prod-almacen','tras-origen','tras-destino','sal-origen','select-almacen-planilla'].forEach(id => {
+    const s = document.getElementById(id); if (!s) return;
+    s.innerHTML = '';
+    almacenesStock.forEach(a => {
+      let icon = (a.tipo === 'Vehiculo') ? '🚚' : '📍';
+      s.innerHTML += `<option value="${a.nombre}">${icon} ${a.nombre} ${a.detalle ? '('+a.detalle+')':''}</option>`;
+    });
+  });
+
+  const sActUbi = document.getElementById('act-ubicacion');
+  const sFiltroAct = document.getElementById('filtro-ubicacion-act');
+
+  if (sActUbi) {
+    sActUbi.innerHTML = '';
+    if (almacenesActivos.length > 0) {
+      almacenesActivos.forEach(a => {
+        sActUbi.innerHTML += `<option value="${a.nombre}">🏠 ${a.nombre} ${a.detalle ? '['+a.detalle+']':''}</option>`;
+      });
+    }
+    almacenesStock.forEach(a => {
+      sActUbi.innerHTML += `<option value="${a.nombre}">🏢 ${a.nombre} (Base)</option>`;
+    });
+  }
+
+  if (sFiltroAct) {
+    sFiltroAct.innerHTML = '<option value="TODOS">Todas las Ubicaciones / Trailers</option>';
+    almacenes.forEach(a => {
+      sFiltroAct.innerHTML += `<option value="${a.nombre}">${a.nombre}</option>`;
+    });
+  }
+
+  const sSalDestino = document.getElementById('sal-destino-equipo');
+  if (sSalDestino) {
+    sSalDestino.innerHTML = '<option value="Consumo Interno General">🔧 Consumo Interno General</option>';
+    almacenes.forEach(a => {
+      const icon = a.tipo === 'Vehiculo' ? '🚚 Vehículo/Maquinaria:' : '🏠 Ubicación/Trailer:';
+      sSalDestino.innerHTML += `<option value="${a.nombre} (${a.detalle || 'Gral'})">${icon} ${a.nombre} ${a.detalle ? '['+a.detalle+']':''}</option>`;
+    });
+  }
+
+  if (document.getElementById('tras-origen').options.length > 1) document.getElementById('tras-destino').selectedIndex = 1;
+}
+
+function actualizarDashboard() {
+  depurarDuplicadosInventario();
+  let urg = 0, sug = 0, valTot = 0, htmlTab = '', htmlCrit = '';
+  const criticos = [];
+  const countCat = { 'Combustibles':0, 'Lubricantes y Flota':0, 'Químicos y Limpieza':0, 'Herramientas':0, 'Consumibles Generales':0 };
+  const canDel = tienePermiso('del');
+  const canSeeVal = tienePermiso('val');
+  const isAdmin = currentUser && currentUser.user.toLowerCase() === 'admin';
+
+  inventario.forEach(p => {
+    if (countCat[p.categoria] !== undefined) countCat[p.categoria]++;
+    else countCat['Consumibles Generales']++;
+
+    let tot = 0; almacenes.forEach(a => tot += (p[`stock_${a.nombre.toLowerCase()}`] || 0));
+    const cUnit = (p.costo && p.costo > 0) ? p.costo : 0;
+    valTot += (tot * cUnit);
+
+    let stBadge = '<span class="badge b-ok">OK</span>';
+    if (tot <= p.minimo) {
+      urg++; stBadge = '<span class="badge b-dan">URGENTE</span>';
+      criticos.push({ nombre: p.nombre, codigo: p.codigo, falta: (p.reorden - tot), medida: p.medida, urg: true });
+    } else if (tot <= p.reorden) {
+      sug++; stBadge = '<span class="badge b-war">SUGERENCIA</span>';
+      criticos.push({ nombre: p.nombre, codigo: p.codigo, falta: (p.reorden - tot), medida: p.medida, urg: false });
+    }
+
+    const cUnitTxt = cUnit > 0 ? `$${cUnit.toFixed(2)}` : '<span style="color:#94a3b8;font-style:italic;">Sin valor</span>';
+
+    htmlTab += `<tr>
+      <td style="font-weight:bold;color:var(--pri);">${p.codigo}</td>
+      <td><span class="tag-cat ${getClaseCategoria(p.categoria)}">${p.categoria}</span></td>
+      <td>${p.nombre}</td>
+      <td class="col-costo" style="${canSeeVal ? '' : 'display:none;'}">${cUnitTxt}</td>
+      <td style="font-weight:bold;">${tot} ${p.medida}(s)</td>
+      <td>${stBadge}</td>
+      <td>
+        ${isAdmin ? `<button class="btn-act" style="background:#e0f2fe;" onclick="editarCostoProducto('${p.codigo}')">💲</button>` : ''}
+        <button class="btn-act" onclick="mostrarQR('${p.codigo}','${p.nombre}',${tot},'${p.medida}')">🖨️</button>
+        ${canDel ? `<button class="btn-act btn-del" onclick="eliminarProducto('${p.codigo}','${p.nombre}')">🗑️</button>` : ''}
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById('resumen-categorias').innerHTML = `
+    <div class="cd cd-dep warning" onclick="showView('deposito-Combustibles',null)"><h3>Combustibles</h3><p>${countCat['Combustibles']}</p></div>
+    <div class="cd cd-dep purple" onclick="showView('deposito-Lubricantes y Flota',null)"><h3>Lubricantes/Flota</h3><p>${countCat['Lubricantes y Flota']}</p></div>
+    <div class="cd cd-dep info" onclick="showView('deposito-Químicos y Limpieza',null)"><h3>Químicos/Limpieza</h3><p>${countCat['Químicos y Limpieza']}</p></div>
+    <div class="cd cd-dep" style="border-left-color:#475569;" onclick="showView('deposito-Herramientas',null)"><h3>Herramientas</h3><p>${countCat['Herramientas']}</p></div>
+    <div class="cd cd-dep success" onclick="showView('deposito-Consumibles Generales',null)"><h3>Consumibles</h3><p>${countCat['Consumibles Generales']}</p></div>
+  `;
+
+  document.getElementById('total-productos').innerText = inventario.length;
+  document.getElementById('total-urgente').innerText = urg;
+  document.getElementById('total-sugerencia').innerText = sug;
+  
+  const cardVal = document.getElementById('card-valor-inventario');
+  const valElem = document.getElementById('valor-inventario');
+  if (canSeeVal) {
+    if (cardVal) cardVal.style.display = 'block';
+    valElem.innerText = `$${valTot.toFixed(2)}`;
+  } else {
+    if (cardVal) cardVal.style.display = 'none';
+  }
+
+  document.getElementById('tabla-alertas').innerHTML = htmlTab || '<tr><td colspan="7" style="text-align:center;">Sin registros.</td></tr>';
+
+  criticos.sort((a,b) => (b.urg ? 1 : 0) - (a.urg ? 1 : 0) || b.falta - a.falta);
+  criticos.slice(0,5).forEach(c => {
+    htmlCrit += `<tr>
+      <td style="font-weight:bold;color:var(--pri);">${c.codigo}</td>
+      <td>${c.nombre}</td>
+      <td><span class="badge ${c.urg ? 'b-dan':'b-war'}">${c.falta > 0 ? c.falta : 0} ${c.medida}</span></td>
+      <td><button class="btn-act" style="background:var(--sec);color:#fff;" onclick="irAComprar('${c.nombre}')">Comprar</button></td>
+    </tr>`;
+  });
+  document.getElementById('tabla-criticos').innerHTML = htmlCrit || '<tr><td colspan="4" style="text-align:center;">Todo correcto.</td></tr>';
+}
+
+function actualizarVistaDeposito(cat) {
+  categoriaActualGlobal = cat;
+  document.getElementById('cat-titulo').innerText = `📦 Depósito: ${cat}`;
+  filtrarTablaDeposito();
+}
+
+function filtrarTablaDeposito() {
+  depurarDuplicadosInventario();
+  const cat = categoriaActualGlobal;
+  const busqueda = (document.getElementById('filtro-deposito-input').value || '').toLowerCase();
+  
+  let h = '', totFis = 0, totProd = 0, valTot = 0;
+  const canDel = tienePermiso('del');
+  const canSeeVal = tienePermiso('val');
+  const isAdmin = currentUser && currentUser.user.toLowerCase() === 'admin';
+
+  inventario.filter(p => p.categoria === cat).forEach(p => {
+    let tot = 0; almacenes.forEach(a => tot += (p[`stock_${a.nombre.toLowerCase()}`] || 0));
+    totFis += tot; totProd++;
+    const cUnit = (p.costo && p.costo > 0) ? p.costo : 0;
+    valTot += (tot * cUnit);
+
+    if (busqueda && !p.nombre.toLowerCase().includes(busqueda) && !p.codigo.toLowerCase().includes(busqueda)) return;
+
+    let desg = almacenes.map(a => {
+      const st = p[`stock_${a.nombre.toLowerCase()}`] || 0;
+      return st > 0 ? `<span style="background:#f3f4f6;padding:2px 4px;border-radius:4px;font-size:10px;margin-right:4px;">${a.nombre}: <b>${st}</b></span>` : '';
+    }).join('');
+
+    const cUnitTxt = cUnit > 0 ? `$${cUnit.toFixed(2)}` : '<span style="color:#94a3b8;font-style:italic;">Sin valor</span>';
+
+    h += `<tr>
+      <td style="font-weight:bold;color:var(--pri);">${p.codigo}</td>
+      <td>${p.nombre}</td>
+      <td>${p.medida}</td>
+      <td class="col-costo" style="${canSeeVal ? '' : 'display:none;'}">${cUnitTxt}</td>
+      <td style="font-weight:bold;">${tot}</td>
+      <td>${desg || '<i style="color:#999;">Sin stock</i>'}</td>
+      <td>
+        ${isAdmin ? `<button class="btn-act" style="background:#e0f2fe;" onclick="editarCostoProducto('${p.codigo}')">💲</button>` : ''}
+        <button class="btn-act" onclick="mostrarQR('${p.codigo}','${p.nombre}',${tot},'${p.medida}')">🖨️</button>
+        ${canDel ? `<button class="btn-act btn-del" onclick="eliminarProducto('${p.codigo}','${p.nombre}')">🗑️</button>` : ''}
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById('cat-total-prod').innerText = totProd;
+  document.getElementById('cat-total-stock').innerText = totFis;
+
+  const cardCatVal = document.getElementById('card-cat-total-valor');
+  const vCatEl = document.getElementById('cat-total-valor');
+  if (canSeeVal) {
+    if (cardCatVal) cardCatVal.style.display = 'block';
+    vCatEl.innerText = `$${valTot.toFixed(2)}`;
+  } else {
+    if (cardCatVal) cardCatVal.style.display = 'none';
+  }
+
+  document.getElementById('tabla-categoria-detalle').innerHTML = h || '<tr><td colspan="7" style="text-align:center;">Sin resultados.</td></tr>';
+}
+
+function actualizarVistaAlmacen(almNombre) {
+  depurarDuplicadosInventario();
+  let h = '', totFis = 0, count = 0;
+  const k = `stock_${almNombre.toLowerCase()}`;
+  const objAlm = almacenes.find(a => a.nombre.toLowerCase() === almNombre.toLowerCase());
+  const canDel = tienePermiso('del');
+  const canSeeVal = tienePermiso('val');
+  const isAdmin = currentUser && currentUser.user.toLowerCase() === 'admin';
+  
+  const inputEl = document.getElementById(`filtro-alm-${almNombre}`);
+  const busqueda = inputEl ? inputEl.value.toLowerCase() : '';
+
+  inventario.filter(p => (p[k] || 0) > 0).forEach(p => {
+    count++; totFis += p[k];
+    if (busqueda && !p.nombre.toLowerCase().includes(busqueda) && !p.codigo.toLowerCase().includes(busqueda)) return;
+
+    const cUnit = (p.costo && p.costo > 0) ? p.costo : 0;
+    const cUnitTxt = cUnit > 0 ? `$${cUnit.toFixed(2)}` : '<span style="color:#94a3b8;font-style:italic;">Sin valor</span>';
+
+    h += `<tr>
+      <td style="font-weight:bold;color:var(--pri);">${p.codigo}</td>
+      <td><span class="tag-cat ${getClaseCategoria(p.categoria)}">${p.categoria}</span></td>
+      <td>${p.nombre}</td>
+      <td class="col-costo" style="${canSeeVal ? '' : 'display:none;'}">${cUnitTxt}</td>
+      <td style="font-weight:bold;">${p[k]} ${p.medida}(s)</td>
+      <td>
+        ${isAdmin ? `<button class="btn-act" style="background:#e0f2fe;" onclick="editarCostoProducto('${p.codigo}')">💲</button>` : ''}
+        <button class="btn-act" onclick="mostrarQR('${p.codigo}','${p.nombre}',${p[k]},'${p.medida}','${objAlm ? objAlm.nombre : almNombre}','${objAlm ? objAlm.detalle : ''}')">🖨️ QR</button>
+        ${canDel ? `<button class="btn-act btn-del" onclick="eliminarProducto('${p.codigo}','${p.nombre}')">🗑️</button>` : ''}
+      </td>
+    </tr>`;
+  });
+  const rp = document.getElementById(`res-${almNombre}-prod`);
+  const rt = document.getElementById(`res-${almNombre}-total`);
+  const tb = document.getElementById(`tabla-${almNombre}`);
+  if (rp) rp.innerText = count;
+  if (rt) rt.innerText = totFis;
+  if (tb) tb.innerHTML = h || '<tr><td colspan="6" style="text-align:center;">Sin resultados.</td></tr>';
+}
+
+function actualizarHistorial() {
+  if (!tienePermiso('hist')) return;
+  const b = document.getElementById('filtro-busqueda').value.toLowerCase();
+  const t = document.getElementById('filtro-tipo').value;
+  const d = document.getElementById('filtro-desde').value;
+  const h = document.getElementById('filtro-hasta').value;
+
+  const fl = historial.filter(x => {
+    const cb = (x.codigo||'').toLowerCase().includes(b) || (x.nombre||'').toLowerCase().includes(b) || (x.detalle||'').toLowerCase().includes(b);
+    const ct = t === 'TODOS' || x.tipo === t;
+    let cf = true;
+    if (d || h) {
+      const p = x.fecha.split(',')[0].split('/');
+      const fh = new Date(p[2], p[1]-1, p[0]);
+      if (d && fh < new Date(d + 'T00:00:00')) cf = false;
+      if (h && fh > new Date(h + 'T23:59:59')) cf = false;
+    }
+    return cb && ct && cf;
+  });
+
+  let html = '';
+  fl.forEach(x => {
+    let col = '';
+    if (['INGRESO','CREACIÓN'].includes(x.tipo)) col = 'color:var(--suc);font-weight:bold;';
+    if (['SALIDA','ELIMINACIÓN'].includes(x.tipo)) col = 'color:var(--dan);font-weight:bold;';
+    if (x.tipo === 'TRASLADO') col = 'color:var(--sec);font-weight:bold;';
+    if (x.tipo === 'ACTIVO_FIJO') col = 'color:var(--act);font-weight:bold;';
+
+    html += `<tr>
+      <td style="font-size:11px;color:#666;">${x.fecha}</td>
+      <td style="${col}">${x.tipo}</td>
+      <td style="font-weight:bold;">${x.codigo}</td>
+      <td>${x.nombre}</td>
+      <td>${x.cantidad} ${x.medida}(s)</td>
+      <td>${x.detalle}</td>
+    </tr>`;
+  });
+  document.getElementById('tabla-historial').innerHTML = html || '<tr><td colspan="6" style="text-align:center;">Sin movimientos.</td></tr>';
+}
+
+function setMesActual() {
+  const now = new Date();
+  const fmt = date => { const d = new Date(date); return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-'); };
+  document.getElementById('filtro-desde').value = fmt(new Date(now.getFullYear(), now.getMonth(), 1));
+  document.getElementById('filtro-hasta').value = fmt(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  actualizarHistorial();
+}
+
+function limpiarFechas() {
+  document.getElementById('filtro-desde').value = '';
+  document.getElementById('filtro-hasta').value = '';
+  actualizarHistorial();
+}
+
+function irAComprar(n) {
+  if (!tienePermiso('ing')) return;
+  showView('inventario', document.getElementById('nav-ingresar'));
+  document.getElementById('prod-nombre').value = n;
+  document.getElementById('prod-nombre').focus();
+}
+
+function mostrarQR(c, n, t, m, almNombre, almDetalle) {
+  const modal = document.getElementById('modal-qr');
+  const qrc = document.getElementById('qrcode');
+  
+  document.getElementById('tag-val-codigo').innerText = c;
+  document.getElementById('tag-val-producto').innerText = n;
+  document.getElementById('tag-val-cantidad').innerText = `${t} ${m}(s)`;
+  document.getElementById('tag-val-ubicacion').innerText = almNombre ? `${almNombre} ${almDetalle ? '['+almDetalle+']' : ''}` : 'Inventario General';
+
+  qrc.innerHTML = '';
+  modal.style.display = 'flex';
+
+  const qrTexto = `CONFUSERCA | COD:${c} | PROD:${n} | CANT:${t} ${m} | UBIC:${almNombre||'General'}`;
+
+  setTimeout(() => {
+    try {
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(qrc, { text: qrTexto, width: 200, height: 200 });
+      } else throw new Error("Librería no disponible");
+    } catch(e) {
+      qrc.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&charset-source=UTF-8&data=${encodeURIComponent(qrTexto)}" alt="QR" style="width:200px;height:200px;">`;
+    }
+  }, 50);
+}
+
+function imprimirEtiquetaQR() {
+  const cod = document.getElementById('tag-val-codigo').innerText;
+  const prod = document.getElementById('tag-val-producto').innerText;
+  const cant = document.getElementById('tag-val-cantidad').innerText;
+  const ubi = document.getElementById('tag-val-ubicacion').innerText;
+  const qrc = document.getElementById('qrcode').innerHTML;
+
+  const vent = window.open('', '_blank', 'width=450,height=350');
+  vent.document.write(`
+    <html>
+    <head><title>Etiqueta_${cod}</title></head>
+    <body style="font-family:sans-serif;text-align:center;padding:10px;">
+      <img src="logo.jpg" alt="Logo Confuserca" style="max-height:40px;width:auto;margin:0 auto;display:block;" onerror="this.src='https://via.placeholder.com/80x30?text=CONFUSERCA'">
+      <h4 style="margin:4px 0;">CONFUSERCA (RIF: J-413238713)</h4>
+      <div>${qrc}</div>
+      <p style="font-size:12px;"><b>CÓDIGO:</b> ${cod}<br><b>BIEN:</b> ${prod}<br><b>ESTADO:</b> ${cant}<br><b>UBIC:</b> ${ubi}</p>
+      <script>window.onload = function() { setTimeout(function() { window.print(); window.close(); }, 250); };<\/script>
+    </body>
+    </html>
+  `);
+  vent.document.close();
+}
+
+function cerrarModal() { document.getElementById('modal-qr').style.display = 'none'; }
+
+function imprimirReporte() {
+  if (!tienePermiso('exp')) return alert('Sin permiso para imprimir o exportar.');
+  window.print();
+}
+
+document.addEventListener('click', function(e) {
+  const inB = document.getElementById('input-buscador-prod');
+  const lsB = document.getElementById('lista-buscador-prod');
+  if (inB && lsB && !inB.contains(e.target) && !lsB.contains(e.target)) lsB.classList.remove('open');
+
+  const inS = document.getElementById('input-buscador-salida');
+  const lsS = document.getElementById('lista-buscador-salida');
+  if (inS && lsS && !inS.contains(e.target) && !lsS.contains(e.target)) lsS.classList.remove('open');
+});
+
+function trucoBorrarTodo(e) {
+  clicsTitulo++;
+  setTimeout(() => clicsTitulo = 0, 1500);
+  if (clicsTitulo >= 5) {
+    if (currentUser && currentUser.user.toLowerCase() === 'admin') {
+      if (confirm('⚠️ ¿Reiniciar todos los datos de almacenamiento local?')) { 
+        localDB.delete().then(() => location.reload());
+      }
+    }
+    clicsTitulo = 0;
+  }
+}
+
+window.onload = function() {
+  const sesion = localStorage.getItem('confuserca_user');
+  if (sesion) {
+    try {
+      currentUser = JSON.parse(sesion);
+      document.getElementById('login-overlay').style.display = 'none';
+      cargarDatosDesdeNube().then(() => initUI());
+    } catch(e) {
+      document.getElementById('login-overlay').style.display = 'flex';
+    }
+  } else {
+    document.getElementById('login-overlay').style.display = 'flex';
+  }
+};
+</script>
+</body>
+</html>
