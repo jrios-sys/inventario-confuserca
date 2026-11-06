@@ -143,7 +143,7 @@ th{background:#f8fafc;color:var(--pri);position:sticky;top:0;z-index:5}.fg{displ
 <button class="bm" id="nav-activos" onclick="showView('activos-fijos',this)">🖥️ Control de Activos Fijos</button>
 <button class="bm" id="nav-historial" onclick="showView('historial',this)">📜 Kardex e Historial</button>
 
-<button class="bm" id="btn-config" onclick="showView('config',this)" style="display:none;margin-top:10px;">⚙️ Configuración y Alertas</button>
+<button class="bm" id="btn-config" onclick="showView('config',this)" style="display:none;margin-top:10px;">⚙️ Configuración</button>
 <button class="bm" onclick="logout()" style="margin-top:auto;background:#b91c1c;">🚪 Cerrar Sesión</button>
 </div>
 
@@ -154,7 +154,6 @@ th{background:#f8fafc;color:var(--pri);position:sticky;top:0;z-index:5}.fg{displ
 <div class="hd">
   <h1>Panel de Control Inventario</h1>
   <div style="display:flex;gap:8px;">
-    <button class="btn-exp" style="background:#059669;" onclick="solicitarPermisoNotificacionesWindows()">🔔 Activar Alertas en Windows</button>
     <button class="btn-exp" style="background:#8b5cf6;" onclick="abrirModalCargaMasiva()">⚡ Carga Masiva (Excel/PDF/Foto)</button>
     <button class="btn-exp" style="background:#475569;" onclick="recategorizarTodoMasivo()">🛠️ Re-categorizar Herramientas</button>
     <button class="btn-exp" id="btn-print-dash" onclick="imprimirReporte()">📄 Imprimir PDF</button>
@@ -443,7 +442,7 @@ th{background:#f8fafc;color:var(--pri);position:sticky;top:0;z-index:5}.fg{displ
 </div>
 
 <div id="config" class="vw">
-<div class="hd"><h1>⚙️ Configuración del Sistema y Alertas</h1></div>
+<div class="hd"><h1>⚙️ Configuración del Sistema</h1></div>
 <div class="dg">
 <div class="pn">
 <h3>👥 Gestión de Usuarios y Permisos</h3>
@@ -478,7 +477,7 @@ th{background:#f8fafc;color:var(--pri);position:sticky;top:0;z-index:5}.fg{displ
 
 <div class="pn">
 <h3>🏢 Ubicaciones (Almacenes, Trailers y Oficinas)</h3>
-<div class="tc" style="max-height:140px;">
+<div class="tc" style="max-height:180px;">
 <table><thead><tr><th>Nombre</th><th>Tipo</th><th>Placa / Detalle</th><th>Acción</th></tr></thead><tbody id="tabla-almacenes-config"></tbody></table>
 </div>
 <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
@@ -499,27 +498,7 @@ th{background:#f8fafc;color:var(--pri);position:sticky;top:0;z-index:5}.fg{displ
 <button class="btn-act" id="btn-alm-cancelar" style="display:none;" onclick="resetFormAlmacen()">Cancelar</button>
 </div>
 </div>
-
-<hr style="margin:15px 0;border:none;border-top:1px solid #eee;">
-
-<h3>📩 Configuración de Notificaciones Múltiples</h3>
-<p style="font-size:11px;color:#666;margin-top:0;">Escribe los correos y teléfonos separados por comas para enviar alertas automáticas cuando el stock esté por agotarse.</p>
-<form onsubmit="guardarConfiguracionAlertas(event)">
-  <div class="fgrp">
-    <label>📧 Múltiples Correos (separados por coma):</label>
-    <textarea id="cfg-correos" rows="2" placeholder="compras@confuserca.com, gerencia@confuserca.com"></textarea>
-  </div>
-  <div class="fgrp">
-    <label>📱 Múltiples WhatsApp con código (+58...):</label>
-    <textarea id="cfg-telefonos" rows="2" placeholder="+584141234567, +584129876543"></textarea>
-  </div>
-  <div style="display:flex;gap:5px;margin-top:5px;">
-    <button type="submit" class="btn-s" style="background:#059669;margin-top:0;">💾 Guardar Contactos</button>
-    <button type="button" class="btn-s" style="background:#3b82f6;margin-top:0;" onclick="probarEnvioAlertasMasivas()">🚀 Probar Notificación</button>
-  </div>
-</form>
 </div>
-
 </div>
 </div>
 
@@ -635,50 +614,6 @@ let almacenes = [];
 let usuarios = [];
 let registrosTraslados = [];
 let registrosSalidas = [];
-
-let configAlertas = JSON.parse(localStorage.getItem('confuserca_alertas_cfg')) || {
-  correos: 'compras@confuserca.com, gerencia@confuserca.com',
-  telefonos: '+584140000000, +584120000000'
-};
-
-function solicitarPermisoNotificacionesWindows() {
-  if ("Notification" in window) {
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") {
-        new Notification("CONFUSERCA", { body: "🟢 Notificaciones de escritorio en Windows activadas." });
-      }
-    });
-  }
-}
-
-function guardarConfiguracionAlertas(e) {
-  e.preventDefault();
-  configAlertas.correos = document.getElementById('cfg-correos').value;
-  configAlertas.telefonos = document.getElementById('cfg-telefonos').value;
-  localStorage.setItem('confuserca_alertas_cfg', JSON.stringify(configAlertas));
-  alert("✅ Contactos de alertas guardados con éxito.");
-}
-
-async function probarEnvioAlertasMasivas() {
-  const listaCorreos = configAlertas.correos.split(',').map(c => c.trim()).filter(c => c);
-  const listaTelefonos = configAlertas.telefonos.split(',').map(t => t.trim()).filter(t => t);
-
-  const itemsCriticos = inventario.filter(p => {
-    let tot = 0; almacenes.forEach(a => tot += (p[`stock_${a.nombre.toLowerCase()}`] || 0));
-    return tot <= p.minimo;
-  });
-
-  let msj = `🚨 *ALERTA INVENTARIO CONFUSERCA*\nExisten ${itemsCriticos.length} materiales por debajo del stock mínimo.\n`;
-  if (itemsCriticos.length) {
-    msj += `Items: ` + itemsCriticos.map(i => i.nombre).join(', ');
-  }
-
-  if ("Notification" in window && Notification.permission === "granted") {
-    new Notification("Confuserca Alerta Stock", { body: msj });
-  }
-
-  alert(`🚀 Alerta procesada y enviada a:\n- ${listaCorreos.length} correo(s)\n- ${listaTelefonos.length} número(s) de WhatsApp`);
-}
 
 function depurarDuplicadosInventario() {
   const mapa = new Map();
